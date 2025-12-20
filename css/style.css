@@ -67,6 +67,7 @@ select {
     position: relative;
     user-select: none;
     transition: background 0.05s, transform 0.05s;
+    box-sizing: border-box;
 }
 
 .white-key {
