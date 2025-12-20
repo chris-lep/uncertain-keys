@@ -7,7 +7,7 @@
         :root { --accent: #ff3e3e; --bg: #0f0f0f; --panel: #222; }
         body { font-family: 'Courier New', monospace; background: var(--bg); color: #ddd; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         .synth-case { background: var(--panel); padding: 20px; border-radius: 10px; border: 4px solid #333; width: 950px; box-shadow: 0 0 50px rgba(0,0,0,0.9); }
-        .dashboard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+        .dashboard { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
         .module { background: #1a1a1a; padding: 10px; border: 1px solid #444; border-top: 3px solid var(--accent); }
         .module h3 { font-size: 12px; margin: 0 0 10px 0; text-align: center; color: var(--accent); border-bottom: 1px solid #333; padding-bottom: 5px; }
         .control { display: flex; flex-direction: column; margin-bottom: 8px; }
@@ -99,6 +99,18 @@
                 <input type="range" id="rel" min="0.01" max="2" step="0.01" value="0.4">
             </div>
         </div>
+
+        <div class="module">
+            <h3>Dynamics</h3>
+            <div class="control">
+                <label>Decay <span id="v_decay">0.1</span></label>
+                <input type="range" id="decay" min="0.01" max="1" step="0.01" value="0.1">
+            </div>
+            <div class="control">
+                <label>Sus <span id="v_sustain">0.5</span></label>
+                <input type="range" id="sustain" min="0" max="1" step="0.1" value="0.5">
+            </div>
+        </div>
     </div>
 
     <div class="keyboard" id="kb"></div>
@@ -173,9 +185,17 @@
 
         // Envelope
         const A = parseFloat(document.getElementById('atk').value);
+        const D = parseFloat(document.getElementById('decay').value);
+        const S = parseFloat(document.getElementById('sustain').value);
         const R = parseFloat(document.getElementById('rel').value);
+        
+        // Max volume is 0.3
+        const maxVol = 0.3;
+        const sustainVol = (S * maxVol) + 0.001; // Ensure non-zero for exponential ramp
+
         amp.gain.setValueAtTime(0, audioCtx.currentTime);
-        amp.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + A);
+        amp.gain.linearRampToValueAtTime(maxVol, audioCtx.currentTime + A);
+        amp.gain.exponentialRampToValueAtTime(sustainVol, audioCtx.currentTime + A + D);
 
         oscA.start(); oscB.start(); lfo.start();
         activeVoices.set(key, {oscA, oscB, lfo, amp});
