@@ -124,18 +124,17 @@
         if(!audioCtx || activeVoices.has(key)) return;
 
         const σA = parseFloat(document.getElementById('uncA').value);
-        const pitchA = freq * Math.pow(2, (gaussian() * σA) / 1200);
-        const pitchB = freq * Math.pow(2, (gaussian() * σA) / 1200); // Osc B drift
+        const pitch = freq * Math.pow(2, (gaussian() * σA) / 1200);
 
         // OSC A
         const oscA = audioCtx.createOscillator();
         oscA.type = document.getElementById('waveA').value;
-        oscA.frequency.value = pitchA;
+        oscA.frequency.value = pitch;
 
         // OSC B
         const oscB = audioCtx.createOscillator();
         oscB.type = document.getElementById('waveB').value;
-        oscB.frequency.value = pitchB;
+        oscB.frequency.value = pitch;
         const gainB = audioCtx.createGain();
         gainB.gain.value = document.getElementById('mixB').value;
 
