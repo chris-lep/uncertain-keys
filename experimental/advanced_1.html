@@ -22,8 +22,8 @@
         input[type=range] { width: 100%; accent-color: var(--accent); cursor: pointer; }
         select { background: #333; color: white; border: 1px solid #444; padding: 4px; border-radius: 4px; width: 100%; }
 
-        .keyboard { position: relative; display: flex; justify-content: center; height: 180px; margin-top: 10px; background: #111; padding: 10px; border-radius: 5px; }
-        .key { border-radius: 0 0 5px 5px; cursor: pointer; user-select: none; transition: all 0.1s; position: relative; }
+        .keyboard { position: relative; display: flex; width: fit-content; margin: 10px auto; height: 180px; background: #111; padding: 10px; border-radius: 5px; }
+        .key { border-radius: 0 0 5px 5px; cursor: pointer; user-select: none; transition: all 0.1s; position: relative; box-sizing: border-box; }
         .white { width: 45px; height: 160px; background: #eee; border: 1px solid #999; z-index: 1; }
         .white.active { background: var(--accent); transform: translateY(2px); }
         .black { width: 30px; height: 100px; background: #222; position: absolute; z-index: 2; margin-left: -15px; border: 1px solid #000; }
