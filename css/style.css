@@ -1,0 +1,137 @@
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #1a1a1a;
+    color: #f0f0f0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.synth-case {
+    background: #2b2b2b;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    border-top: 4px solid #444;
+}
+
+h2 { margin: 0 0 20px 0; color: #fff; letter-spacing: 1px; }
+
+.controls-row {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 25px;
+    background: #222;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #333;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+label { font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 0.5px; }
+
+input[type=range] {
+    width: 150px;
+    accent-color: #ff9d00;
+    cursor: pointer;
+}
+
+select {
+    padding: 5px;
+    background: #444;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.piano-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.key {
+    border: 1px solid #000;
+    border-radius: 0 0 4px 4px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: background 0.05s, transform 0.05s;
+}
+
+.white-key {
+    width: 50px;
+    height: 200px;
+    background: #fdfdfd;
+    color: #333;
+    z-index: 1;
+    box-shadow: inset 0 -5px 10px rgba(0,0,0,0.1);
+}
+
+.white-key.active { 
+    background: #e0e0e0; 
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.4);
+    transform: translateY(2px);
+}
+
+.black-key {
+    width: 32px;
+    height: 120px;
+    background: linear-gradient(180deg, #333 0%, #000 100%);
+    color: white;
+    position: absolute;
+    z-index: 2;
+    margin-left: -16px; 
+    border-bottom: 4px solid #111;
+}
+
+.black-key.active { 
+    background: #222;
+    border-bottom: 1px solid #111;
+    transform: translateY(2px);
+}
+
+/* Hardcoded positions for black keys relative to left edge */
+.bk-1 { left: 50px; }
+.bk-2 { left: 100px; }
+.bk-3 { left: 200px; }
+.bk-4 { left: 250px; }
+.bk-5 { left: 300px; }
+.bk-6 { left: 400px; }
+.bk-7 { left: 450px; }
+
+.key-hint {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    cursor: pointer;
+    color: white;
+    flex-direction: column;
+}
+
+.overlay h1 { font-size: 24px; font-weight: normal; }
+.overlay p { color: #aaa; margin-top: 10px; }

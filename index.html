@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uncertain Keys Synth</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div class="overlay" id="overlay">
+        <h1>Click to Start Synthesizer</h1>
+        <p>Use your keyboard (A-L) to play</p>
+    </div>
+
+    <div class="synth-case">
+        <h2>Uncertain Keys Synth</h2>
+        
+        <div class="controls-row">
+            <div class="control-group">
+                <label>Pitch Instability (Cents)</label>
+                <input type="range" id="variance" min="0" max="100" value="15" step="1">
+                <span id="varianceVal" style="font-size:12px; color:#ff9d00">15</span>
+            </div>
+
+            <div class="control-group">
+                <label>Waveform</label>
+                <select id="waveform">
+                    <option value="sawtooth">Sawtooth</option>
+                    <option value="square">Square</option>
+                    <option value="triangle">Triangle</option>
+                    <option value="sine">Sine</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Filter Cutoff</label>
+                <input type="range" id="cutoff" min="100" max="5000" value="2000" step="10">
+            </div>
+        </div>
+
+        <div class="piano-container" id="piano">
+            </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
