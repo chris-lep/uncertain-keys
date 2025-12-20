@@ -21,7 +21,7 @@ To play the synthesizer locally:
 
 ### Live Demo
 
-The synthesizer can be accessed at the repository's associated GitHub Pages URL.
+The synthesizer can be accessed at the repository's associated GitHub Pages URL (https://chris-lep.github.io/uncertain-keys/).
 
 ## Project Structure
 
