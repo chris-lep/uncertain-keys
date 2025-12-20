@@ -187,6 +187,7 @@
         const {oscA, oscB, lfo, amp} = activeVoices.get(key);
         const R = parseFloat(document.getElementById('rel').value);
         amp.gain.cancelScheduledValues(audioCtx.currentTime);
+        amp.gain.setValueAtTime(amp.gain.value, audioCtx.currentTime);
         amp.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + R);
         [oscA, oscB, lfo].forEach(o => o.stop(audioCtx.currentTime + R + 0.1));
         activeVoices.delete(key);
