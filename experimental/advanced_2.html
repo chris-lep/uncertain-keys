@@ -32,11 +32,15 @@
     <p>CLICK TO PATCH AUDIO TERMINAL</p>
 </div>
 
-<div class="synth-case">
-    <canvas id="scope"></canvas>
+    <div class="synth-case">
+        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+            <label style="color:#666; font-size:10px; width:auto;">
+                <input type="checkbox" id="vizToggle" checked style="width:auto; accent-color:var(--accent);"> Enable Oscilloscope (CPU Heavy)
+            </label>
+        </div>
+        <canvas id="scope"></canvas>
     
-    <div class="dashboard">
-        <div class="module">
+    <div class="dashboard">        <div class="module">
             <h3>OSC A (Main)</h3>
             <div class="control">
                 <label>Wave</label>
@@ -202,17 +206,35 @@
     window.onkeyup = e => stop(e.key.toLowerCase());
 
     function draw() {
+        const active = document.getElementById('vizToggle').checked;
+        if (!active) {
+            setTimeout(draw, 500); // Check again in 500ms
+            return;
+        }
+        
         requestAnimationFrame(draw);
         if(!analyser) return;
+        
         const data = new Uint8Array(analyser.frequencyBinCount);
         analyser.getByteTimeDomainData(data);
         const ctx = document.getElementById('scope').getContext('2d');
-        ctx.fillStyle = '#000'; ctx.fillRect(0,0,950,80);
-        ctx.strokeStyle = '#ff3e3e'; ctx.lineWidth = 2; ctx.beginPath();
+        ctx.fillStyle = '#000'; 
+        ctx.fillRect(0,0,950,80);
+        
+        ctx.strokeStyle = '#ff3e3e'; 
+        ctx.lineWidth = 2; 
+        ctx.beginPath();
+        
+        const width = 950;
+        const sliceWidth = width / data.length;
+        let x = 0;
+
         for(let i=0; i<data.length; i++) {
-            const x = i * (950/data.length);
-            const y = (data[i]/128.0) * 40;
-            i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+            const v = data[i] / 128.0;
+            const y = v * 40;
+            if(i === 0) ctx.moveTo(x,y);
+            else ctx.lineTo(x,y);
+            x += sliceWidth;
         }
         ctx.stroke();
     }
