@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gaussian Modular Master</title>
+    <style>
+        :root { --accent: #ff3e3e; --bg: #0f0f0f; --panel: #222; }
+        body { font-family: 'Courier New', monospace; background: var(--bg); color: #ddd; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .synth-case { background: var(--panel); padding: 20px; border-radius: 10px; border: 4px solid #333; width: 950px; box-shadow: 0 0 50px rgba(0,0,0,0.9); }
+        .dashboard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+        .module { background: #1a1a1a; padding: 10px; border: 1px solid #444; border-top: 3px solid var(--accent); }
+        .module h3 { font-size: 12px; margin: 0 0 10px 0; text-align: center; color: var(--accent); border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .control { display: flex; flex-direction: column; margin-bottom: 8px; }
+        label { font-size: 9px; text-transform: uppercase; margin-bottom: 3px; display: flex; justify-content: space-between; }
+        input[type=range] { accent-color: var(--accent); cursor: pointer; }
+        select { background: #000; color: var(--accent); border: 1px solid #444; font-size: 10px; }
+        canvas { width: 100%; height: 80px; background: #000; margin-bottom: 15px; border: 1px solid #333; }
+        .keyboard { position: relative; display: flex; justify-content: center; height: 150px; margin-top: 15px; }
+        .key { border: 1px solid #000; border-radius: 0 0 3px 3px; cursor: pointer; position: relative; }
+        .white { width: 40px; height: 140px; background: #ccc; z-index: 1; }
+        .white.active { background: var(--accent); }
+        .black { width: 26px; height: 90px; background: #000; position: absolute; z-index: 2; margin-left: -13px; }
+        .black.active { background: #666; }
+        .bk0{left:40px}.bk1{left:80px}.bk2{left:160px}.bk3{left:200px}.bk4{left:240px}.bk5{left:320px}.bk6{left:360px}
+        .overlay { position: fixed; inset: 0; background: #000; z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay">
+    <h1 style="color:var(--accent)">SYSTEM INITIALIZE</h1>
+    <p>CLICK TO PATCH AUDIO TERMINAL</p>
+</div>
+
+<div class="synth-case">
+    <canvas id="scope"></canvas>
+    
+    <div class="dashboard">
+        <div class="module">
+            <h3>OSC A (Main)</h3>
+            <div class="control">
+                <label>Wave</label>
+                <select id="waveA"><option value="sawtooth">Sawtooth</option><option value="square">Square</option></select>
+            </div>
+            <div class="control">
+                <label>Gaussian σ <span id="v_uncA">10</span></label>
+                <input type="range" id="uncA" min="0" max="100" value="10">
+            </div>
+        </div>
+
+        <div class="module">
+            <h3>OSC B (Sub/Layer)</h3>
+            <div class="control">
+                <label>Wave</label>
+                <select id="waveB"><option value="sine">Sine</option><option value="triangle">Triangle</option><option value="sawtooth">Sawtooth</option></select>
+            </div>
+            <div class="control">
+                <label>Mix <span id="v_mixB">0.5</span></label>
+                <input type="range" id="mixB" min="0" max="1" step="0.1" value="0.5">
+            </div>
+        </div>
+
+        <div class="module">
+            <h3>LFO (Mod)</h3>
+            <div class="control">
+                <label>Rate <span id="v_lfoR">4.0</span></label>
+                <input type="range" id="lfoR" min="0.1" max="20" step="0.1" value="4">
+            </div>
+            <div class="control">
+                <label>Dest</label>
+                <select id="lfoDest"><option value="pitch">Pitch</option><option value="filter">Filter</option></select>
+            </div>
+        </div>
+
+        <div class="module">
+            <h3>VCF (Filter)</h3>
+            <div class="control">
+                <label>Cutoff <span id="v_cut">1500</span></label>
+                <input type="range" id="cutoff" min="50" max="5000" value="1500">
+            </div>
+            <div class="control">
+                <label>Res (Q) <span id="v_q">2</span></label>
+                <input type="range" id="q" min="0.1" max="20" step="0.1" value="2">
+            </div>
+        </div>
+
+        <div class="module">
+            <h3>ADSR</h3>
+            <div class="control">
+                <label>Atk <span id="v_atk">0.05</span></label>
+                <input type="range" id="atk" min="0.01" max="1" step="0.01" value="0.05">
+            </div>
+            <div class="control">
+                <label>Rel <span id="v_rel">0.4</span></label>
+                <input type="range" id="rel" min="0.01" max="2" step="0.01" value="0.4">
+            </div>
+        </div>
+    </div>
+
+    <div class="keyboard" id="kb"></div>
+</div>
+
+<script>
+    let audioCtx, analyser, masterGain;
+    const activeVoices = new Map();
+
+    const notes = [
+        {f: 261.63, k: 'a', t: 'white'}, {f: 277.18, k: 'w', t: 'black'},
+        {f: 293.66, k: 's', t: 'white'}, {f: 311.13, k: 'e', t: 'black'},
+        {f: 329.63, k: 'd', t: 'white'}, {f: 349.23, k: 'f', t: 'white'},
+        {f: 369.99, k: 't', t: 'black'}, {f: 392.00, k: 'g', t: 'white'},
+        {f: 415.30, k: 'y', t: 'black'}, {f: 440.00, k: 'h', t: 'white'},
+        {f: 466.16, k: 'u', t: 'black'}, {f: 493.88, k: 'j', t: 'white'}
+    ];
+
+    function gaussian() {
+        let u = 0, v = 0;
+        while(u === 0) u = Math.random();
+        while(v === 0) v = Math.random();
+        return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+    }
+
+    function play(freq, key) {
+        if(!audioCtx || activeVoices.has(key)) return;
+
+        const σA = parseFloat(document.getElementById('uncA').value);
+        const pitchA = freq * Math.pow(2, (gaussian() * σA) / 1200);
+        const pitchB = freq * Math.pow(2, (gaussian() * σA) / 1200); // Osc B drift
+
+        // OSC A
+        const oscA = audioCtx.createOscillator();
+        oscA.type = document.getElementById('waveA').value;
+        oscA.frequency.value = pitchA;
+
+        // OSC B
+        const oscB = audioCtx.createOscillator();
+        oscB.type = document.getElementById('waveB').value;
+        oscB.frequency.value = pitchB;
+        const gainB = audioCtx.createGain();
+        gainB.gain.value = document.getElementById('mixB').value;
+
+        // LFO
+        const lfo = audioCtx.createOscillator();
+        const lfoGain = audioCtx.createGain();
+        lfo.frequency.value = document.getElementById('lfoR').value;
+        lfoGain.gain.value = (document.getElementById('lfoDest').value === 'pitch') ? 10 : 500;
+        
+        // VCF Filter
+        const vcf = audioCtx.createBiquadFilter();
+        vcf.frequency.value = document.getElementById('cutoff').value;
+        vcf.Q.value = document.getElementById('q').value;
+
+        // Routing
+        oscA.connect(vcf);
+        oscB.connect(gainB).connect(vcf);
+        lfo.connect(lfoGain);
+        
+        if(document.getElementById('lfoDest').value === 'pitch') {
+            lfoGain.connect(oscA.frequency);
+            lfoGain.connect(oscB.frequency);
+        } else {
+            lfoGain.connect(vcf.frequency);
+        }
+
+        const amp = audioCtx.createGain();
+        vcf.connect(amp).connect(analyser);
+
+        // Envelope
+        const A = parseFloat(document.getElementById('atk').value);
+        const R = parseFloat(document.getElementById('rel').value);
+        amp.gain.setValueAtTime(0, audioCtx.currentTime);
+        amp.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + A);
+
+        oscA.start(); oscB.start(); lfo.start();
+        activeVoices.set(key, {oscA, oscB, lfo, amp});
+        document.getElementById('key-'+key).classList.add('active');
+    }
+
+    function stop(key) {
+        if(!activeVoices.has(key)) return;
+        const {oscA, oscB, lfo, amp} = activeVoices.get(key);
+        const R = parseFloat(document.getElementById('rel').value);
+        amp.gain.cancelScheduledValues(audioCtx.currentTime);
+        amp.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + R);
+        [oscA, oscB, lfo].forEach(o => o.stop(audioCtx.currentTime + R + 0.1));
+        activeVoices.delete(key);
+        document.getElementById('key-'+key).classList.remove('active');
+    }
+
+    // UI Setup
+    const kb = document.getElementById('kb');
+    let bIdx = 0;
+    notes.forEach(n => {
+        const d = document.createElement('div');
+        d.id = 'key-'+n.k;
+        d.className = `key ${n.t} ${n.t === 'black' ? 'bk'+(bIdx++) : ''}`;
+        d.onmousedown = () => play(n.f, n.k);
+        d.onmouseup = () => stop(n.k);
+        kb.appendChild(d);
+    });
+
+    window.onkeydown = e => { const n = notes.find(x => x.k === e.key.toLowerCase()); if(n) play(n.f, n.k); };
+    window.onkeyup = e => stop(e.key.toLowerCase());
+
+    function draw() {
+        requestAnimationFrame(draw);
+        if(!analyser) return;
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteTimeDomainData(data);
+        const ctx = document.getElementById('scope').getContext('2d');
+        ctx.fillStyle = '#000'; ctx.fillRect(0,0,950,80);
+        ctx.strokeStyle = '#ff3e3e'; ctx.lineWidth = 2; ctx.beginPath();
+        for(let i=0; i<data.length; i++) {
+            const x = i * (950/data.length);
+            const y = (data[i]/128.0) * 40;
+            i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+    }
+
+    document.getElementById('overlay').onclick = function() {
+        audioCtx = new AudioContext();
+        analyser = audioCtx.createAnalyser();
+        analyser.connect(audioCtx.destination);
+        this.style.display = 'none';
+        draw();
+    };
+
+    document.querySelectorAll('input').forEach(i => {
+        i.oninput = e => { if(document.getElementById('v_'+e.target.id)) document.getElementById('v_'+e.target.id).innerText = e.target.value; };
+    });
+</script>
+</body>
+</html>

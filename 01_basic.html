@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gaussian Pitch Synthesizer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #222;
+            color: #eee;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h2 { margin-bottom: 10px; }
+
+        .controls {
+            background: #333;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        input[type=range] {
+            width: 300px;
+            accent-color: #00d2ff;
+        }
+
+        .piano-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+        }
+
+        .key {
+            border: 1px solid #000;
+            border-radius: 0 0 4px 4px;
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+            transition: background 0.1s;
+        }
+
+        .white-key {
+            width: 50px;
+            height: 200px;
+            background: white;
+            color: #333;
+            z-index: 1;
+        }
+
+        .white-key.active { background: #ddd; box-shadow: inset 0 0 10px #000; }
+
+        .black-key {
+            width: 30px;
+            height: 120px;
+            background: black;
+            color: white;
+            position: absolute;
+            z-index: 2;
+            margin-left: -15px; /* Half width to center on line */
+        }
+
+        .black-key.active { background: #333; box-shadow: inset 0 0 5px #000; }
+
+        /* Positioning Black Keys */
+        .bk-1 { left: 50px; }
+        .bk-2 { left: 100px; }
+        .bk-3 { left: 200px; }
+        .bk-4 { left: 250px; }
+        .bk-5 { left: 300px; }
+        .bk-6 { left: 400px; }
+        .bk-7 { left: 450px; }
+
+        .note-label {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            pointer-events: none;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="overlay" id="overlay">
+        <h1>Click anywhere to enable Audio</h1>
+    </div>
+
+    <div class="controls">
+        <h2>Gaussian Pitch Synthesizer</h2>
+        <p>Pitch varies based on a Gaussian distribution in log-space (cents).</p>
+        <div class="slider-container">
+            <label for="variance">Standard Deviation (Cents): <span id="varianceVal">0</span></label>
+            <input type="range" id="variance" min="0" max="200" value="0" step="1">
+            <small>0 = Exact Pitch | 100 = +/- 1 Semitone avg spread</small>
+        </div>
+    </div>
+
+    <div class="piano-container" id="piano">
+        </div>
+
+    <script>
+        // --- 1. Audio Engine Setup ---
+        let audioCtx;
+        const activeOscillators = {}; // Map to track active notes
+        
+        // Frequencies for one octave (Middle C to C5)
+        // We will map keyboard keys to these notes.
+        const notes = [
+            { note: "C4",  freq: 261.63, type: "white", key: "a" },
+            { note: "C#4", freq: 277.18, type: "black", key: "w" },
+            { note: "D4",  freq: 293.66, type: "white", key: "s" },
+            { note: "D#4", freq: 311.13, type: "black", key: "e" },
+            { note: "E4",  freq: 329.63, type: "white", key: "d" },
+            { note: "F4",  freq: 349.23, type: "white", key: "f" },
+            { note: "F#4", freq: 369.99, type: "black", key: "t" },
+            { note: "G4",  freq: 392.00, type: "white", key: "g" },
+            { note: "G#4", freq: 415.30, type: "black", key: "y" },
+            { note: "A4",  freq: 440.00, type: "white", key: "h" },
+            { note: "A#4", freq: 466.16, type: "black", key: "u" },
+            { note: "B4",  freq: 493.88, type: "white", key: "j" },
+            { note: "C5",  freq: 523.25, type: "white", key: "k" },
+            { note: "C#5", freq: 554.37, type: "black", key: "o" },
+            { note: "D5",  freq: 587.33, type: "white", key: "l" }
+        ];
+
+        // --- 2. Math Helpers ---
+
+        // Box-Muller Transform for Gaussian Distribution
+        // Returns a number from a distribution with mean 0 and standard deviation 1
+        function gaussianRandom() {
+            let u = 0, v = 0;
+            while(u === 0) u = Math.random(); 
+            while(v === 0) v = Math.random();
+            return Math.sqrt( -2.0 * Math.log( u ) ) * Math.cos( 2.0 * Math.PI * v );
+        }
+
+        function getGaussianPitch(baseFreq, deviationInCents) {
+            if (deviationInCents === 0) return baseFreq;
+            
+            // Get a random value from standard normal distribution
+            const z = gaussianRandom();
+            
+            // Scale by our desired standard deviation
+            const actualDeviationCents = z * deviationInCents;
+            
+            // Convert cents deviation to frequency multiplier
+            // Formula: f = f0 * 2^(cents / 1200)
+            const multiplier = Math.pow(2, actualDeviationCents / 1200);
+            
+            return baseFreq * multiplier;
+        }
+
+        // --- 3. Synth Logic ---
+
+        function playNote(freq, keyId) {
+            if (!audioCtx) return;
+            if (activeOscillators[keyId]) return; // Already playing
+
+            const variance = document.getElementById('variance').value;
+            const finalFreq = getGaussianPitch(freq, variance);
+
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            osc.type = 'sawtooth'; // Richer sound than sine
+            osc.frequency.setValueAtTime(finalFreq, audioCtx.currentTime);
+
+            // Envelope to prevent clicking
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
+
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc.start();
+
+            // Store ref to stop later
+            activeOscillators[keyId] = { osc, gainNode };
+            
+            // Visual feedback
+            const el = document.getElementById(keyId);
+            if(el) el.classList.add('active');
+        }
+
+        function stopNote(keyId) {
+            if (!activeOscillators[keyId]) return;
+
+            const { osc, gainNode } = activeOscillators[keyId];
+
+            // Release envelope
+            gainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(gainNode.gain.value, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+            
+            osc.stop(audioCtx.currentTime + 0.2);
+
+            delete activeOscillators[keyId];
+
+            // Visual feedback
+            const el = document.getElementById(keyId);
+            if(el) el.classList.remove('active');
+        }
+
+        // --- 4. UI Generation & Event Handling ---
+
+        const pianoDiv = document.getElementById('piano');
+        let whiteKeyCount = 0;
+
+        notes.forEach((n, index) => {
+            const div = document.createElement('div');
+            div.id = n.key; // Use the keyboard char as ID
+            div.classList.add('key');
+            
+            if (n.type === 'white') {
+                div.classList.add('white-key');
+                whiteKeyCount++;
+            } else {
+                div.classList.add('black-key');
+                // Calculate position based on previous white keys
+                // Simple hardcoded classes for this demo based on index
+                if(index === 1) div.classList.add('bk-1');
+                if(index === 3) div.classList.add('bk-2');
+                if(index === 6) div.classList.add('bk-3');
+                if(index === 8) div.classList.add('bk-4');
+                if(index === 10) div.classList.add('bk-5');
+                if(index === 13) div.classList.add('bk-6');
+            }
+
+            // Label
+            div.innerHTML = `<span class="note-label">${n.key.toUpperCase()}</span>`;
+
+            // Mouse Events
+            div.addEventListener('mousedown', () => playNote(n.freq, n.key));
+            div.addEventListener('mouseup', () => stopNote(n.key));
+            div.addEventListener('mouseleave', () => stopNote(n.key));
+
+            pianoDiv.appendChild(div);
+        });
+
+        // Keyboard Events
+        window.addEventListener('keydown', (e) => {
+            const k = e.key.toLowerCase();
+            const noteData = notes.find(n => n.key === k);
+            if (noteData && !e.repeat) {
+                playNote(noteData.freq, k);
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const k = e.key.toLowerCase();
+            if (notes.find(n => n.key === k)) {
+                stopNote(k);
+            }
+        });
+
+        // Initialize Audio Context on click (Browser policy requires user interaction)
+        document.getElementById('overlay').addEventListener('click', function() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            this.style.display = 'none';
+        });
+
+        // Update slider label
+        const slider = document.getElementById('variance');
+        const label = document.getElementById('varianceVal');
+        slider.addEventListener('input', (e) => {
+            label.textContent = e.target.value;
+        });
+
+    </script>
+</body>
+</html>
