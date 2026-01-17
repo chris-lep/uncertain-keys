@@ -122,6 +122,8 @@ select {
     cursor: pointer;
     position: relative;
     user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
     transition: background 0.05s, transform 0.05s;
     box-sizing: border-box;
 }

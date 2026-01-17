@@ -180,24 +180,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const label = n.keyUS.toUpperCase();
         div.innerHTML = `<span class="key-hint" id="hint-${idx}">${label}</span>`;
 
-        // Mouse Interaction
-        div.addEventListener('mousedown', () => play(n.freq, idx));
-        div.addEventListener('mouseup', () => stop(idx));
-        div.addEventListener('mouseleave', () => stop(idx));
-
-        // Touch Interaction
-        div.addEventListener('touchstart', (e) => {
+        // Pointer Interaction (Mouse & Touch)
+        div.addEventListener('pointerdown', (e) => {
             e.preventDefault();
             play(n.freq, idx);
+            div.setPointerCapture(e.pointerId); // Keep receiving events even if sliding off
         });
-        div.addEventListener('touchend', (e) => {
+        
+        div.addEventListener('pointerup', (e) => {
             e.preventDefault();
+            div.releasePointerCapture(e.pointerId);
             stop(idx);
         });
-        div.addEventListener('touchcancel', (e) => {
+
+        div.addEventListener('pointercancel', (e) => {
             e.preventDefault();
+            div.releasePointerCapture(e.pointerId);
             stop(idx);
         });
+        
+        // Note: pointerleave is not needed if we use setPointerCapture, 
+        // as the element "holds" the pointer until release.
+        // This satisfies "holding a note while pressing it" even if the finger wiggles.
 
         pianoDiv.appendChild(div);
     });
@@ -290,9 +294,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Audio Context Start
-    document.getElementById('overlay').addEventListener('click', function() {
+    const overlay = document.getElementById('overlay');
+    const startAudio = () => {
         synth.init();
-        this.style.display = 'none';
-    });
+        overlay.style.display = 'none';
+    };
+    overlay.addEventListener('click', startAudio);
+    overlay.addEventListener('pointerdown', startAudio);
 
 });
