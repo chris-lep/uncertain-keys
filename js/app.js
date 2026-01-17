@@ -185,6 +185,20 @@ document.addEventListener('DOMContentLoaded', () => {
         div.addEventListener('mouseup', () => stop(idx));
         div.addEventListener('mouseleave', () => stop(idx));
 
+        // Touch Interaction
+        div.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            play(n.freq, idx);
+        });
+        div.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            stop(idx);
+        });
+        div.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            stop(idx);
+        });
+
         pianoDiv.appendChild(div);
     });
 
