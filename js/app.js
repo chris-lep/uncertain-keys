@@ -57,9 +57,11 @@ class Synth {
         if (!this.audioCtx) return;
         if (this.activeVoices[keyId]) return; // Monophonic per key
 
-        const { variance, waveType, cutoff } = settings;
+        const { variance, waveType, cutoff, octaveShift } = settings;
         
-        const finalFreq = getGaussianPitch(freq, variance);
+        // Shift base frequency by octave: freq * 2^shift
+        const baseFreq = freq * Math.pow(2, parseInt(octaveShift) || 0);
+        const finalFreq = getGaussianPitch(baseFreq, variance);
         const now = this.audioCtx.currentTime;
 
         // 1. Oscillator (Source)
@@ -117,13 +119,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const synth = new Synth();
     let currentLayout = 'US';
+    let octaveShift = 0;
 
     function getSettings() {
         return {
             variance: document.getElementById('variance').value,
             waveType: document.getElementById('waveform').value,
-            cutoff: document.getElementById('cutoff').value
+            cutoff: document.getElementById('cutoff').value,
+            octaveShift: octaveShift
         };
+    }
+
+    function updateOctaveDisplay() {
+        document.getElementById('octaveVal').innerText = (octaveShift > 0 ? "+" : "") + octaveShift;
     }
 
     // Visuals
@@ -199,6 +207,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.repeat) return;
         const k = e.key.toLowerCase();
         
+        // Octave shortcuts (Layout aware)
+        // Down: 'z' on US, 'y' on DE (Physical bottom-left key)
+        const downKey = currentLayout === 'DE' ? 'y' : 'z';
+        // Up: 'x' on both
+        const upKey = 'x';
+
+        if (k === downKey) {
+            octaveShift--;
+            updateOctaveDisplay();
+            return;
+        }
+        if (k === upKey) {
+            octaveShift++;
+            updateOctaveDisplay();
+            return;
+        }
+
+        // Play Note
         const noteIdx = notes.findIndex(n => getKeyForLayout(n, currentLayout) === k);
         
         if (noteIdx !== -1) {
@@ -229,6 +255,23 @@ document.addEventListener('DOMContentLoaded', () => {
             updateKeyHints();
             // Stop all notes when switching layouts to prevent stuck keys
             Object.keys(synth.activeVoices).forEach(key => stop(key));
+        });
+    }
+
+    // Octave Buttons
+    const btnDown = document.getElementById('octaveDown');
+    if (btnDown) {
+        btnDown.addEventListener('click', () => {
+            octaveShift--;
+            updateOctaveDisplay();
+        });
+    }
+
+    const btnUp = document.getElementById('octaveUp');
+    if (btnUp) {
+        btnUp.addEventListener('click', () => {
+            octaveShift++;
+            updateOctaveDisplay();
         });
     }
 
