@@ -57,9 +57,11 @@ class Synth {
         if (!this.audioCtx) return;
         if (this.activeVoices[keyId]) return; // Monophonic per key
 
-        const { variance, waveType, cutoff } = settings;
+        const { variance, waveType, cutoff, octaveShift } = settings;
         
-        const finalFreq = getGaussianPitch(freq, variance);
+        // Shift base frequency by octave: freq * 2^shift
+        const baseFreq = freq * Math.pow(2, parseInt(octaveShift) || 0);
+        const finalFreq = getGaussianPitch(baseFreq, variance);
         const now = this.audioCtx.currentTime;
 
         // 1. Oscillator (Source)
@@ -116,13 +118,19 @@ class Synth {
 document.addEventListener('DOMContentLoaded', () => {
 
     const synth = new Synth();
+    let octaveShift = 0;
 
     function getSettings() {
         return {
             variance: document.getElementById('variance').value,
             waveType: document.getElementById('waveform').value,
-            cutoff: document.getElementById('cutoff').value
+            cutoff: document.getElementById('cutoff').value,
+            octaveShift: octaveShift
         };
+    }
+
+    function updateOctaveDisplay() {
+        document.getElementById('octaveVal').innerText = (octaveShift > 0 ? "+" : "") + octaveShift;
     }
 
     // Visuals
@@ -182,6 +190,19 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('keydown', (e) => {
         if (e.repeat) return;
         const k = e.key.toLowerCase();
+        
+        // Octave shortcuts
+        if (k === 'z') {
+            octaveShift--;
+            updateOctaveDisplay();
+            return;
+        }
+        if (k === 'x') {
+            octaveShift++;
+            updateOctaveDisplay();
+            return;
+        }
+
         const noteData = notes.find(n => n.key === k);
         if (noteData) play(noteData.freq, k);
     });
@@ -195,6 +216,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const varianceSlider = document.getElementById('variance');
     varianceSlider.addEventListener('input', (e) => {
         document.getElementById('varianceVal').innerText = e.target.value;
+    });
+
+    document.getElementById('octaveDown').addEventListener('click', () => {
+        octaveShift--;
+        updateOctaveDisplay();
+    });
+
+    document.getElementById('octaveUp').addEventListener('click', () => {
+        octaveShift++;
+        updateOctaveDisplay();
     });
 
     // Audio Context Start
