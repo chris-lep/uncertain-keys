@@ -13,11 +13,12 @@ A virtual synthesizer that explores pitch uncertainty. Instead of playing a fixe
 
 ## Controls
 
-- **Musical Keys**: Use the home row (`A`, `S`, `D`, `F`, `G`, `H`, `J`, `K`, `L`, `;`) and the row above (`W`, `E`, `T`, `Y`, `U`, `O`, `P`) to play notes.
+- **Musical Keys**: Use your keyboard's home row and top row to play notes. The on-screen keys will display the correct character mapping based on your selected layout (US or German).
 - **Octave Shifting**:
-  - Press **`Z`** to shift the octave **down**.
-  - Press **`X`** to shift the octave **up**.
+  - Shift Down: **`Z`** (US layout) or **`Y`** (German layout).
+  - Shift Up: **`X`**.
 - **Interface**:
+  - **Layout**: Switch between US and German keyboard layouts.
   - **Variance**: Controls the random pitch deviation.
   - **Waveform**: Selects the oscillator shape.
   - **Filter Cutoff**: Adjusts the brightness of the sound.
