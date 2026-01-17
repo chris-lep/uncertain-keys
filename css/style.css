@@ -83,6 +83,9 @@ select {
     display: flex;
     justify-content: center;
     margin-top: 10px;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .key {
