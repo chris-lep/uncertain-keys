@@ -8,7 +8,7 @@ A virtual synthesizer that explores pitch uncertainty. Instead of playing a fixe
 - **Logarithmic Distribution**: The pitch variation is calculated in cents (logarithmic space) to ensure consistent perceived variation across the frequency spectrum.
 - **Tunable Variance**: You can adjust the standard deviation (in cents) to control how "out of tune" or unstable the synthesizer sounds.
 - **Web Audio API**: Runs entirely in the browser using the Web Audio API.
-- **Keyboard Support**: Play using your computer keyboard or by clicking the on-screen keys.
+- **Keyboard Support**: Play using your computer keyboard (supports both US and German layouts) or by clicking the on-screen keys.
 
 ## Usage
 

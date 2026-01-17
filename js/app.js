@@ -18,23 +18,23 @@ function getGaussianPitch(baseFreq, varianceCents) {
 
 // --- notes.js ---
 const notes = [
-    { note: "C4",  freq: 261.63, type: "white", key: "a" },
-    { note: "C#4", freq: 277.18, type: "black", key: "w" },
-    { note: "D4",  freq: 293.66, type: "white", key: "s" },
-    { note: "D#4", freq: 311.13, type: "black", key: "e" },
-    { note: "E4",  freq: 329.63, type: "white", key: "d" },
-    { note: "F4",  freq: 349.23, type: "white", key: "f" },
-    { note: "F#4", freq: 369.99, type: "black", key: "t" },
-    { note: "G4",  freq: 392.00, type: "white", key: "g" },
-    { note: "G#4", freq: 415.30, type: "black", key: "y" },
-    { note: "A4",  freq: 440.00, type: "white", key: "h" },
-    { note: "A#4", freq: 466.16, type: "black", key: "u" },
-    { note: "B4",  freq: 493.88, type: "white", key: "j" },
-    { note: "C5",  freq: 523.25, type: "white", key: "k" },
-    { note: "C#5", freq: 554.37, type: "black", key: "o" },
-    { note: "D5",  freq: 587.33, type: "white", key: "l" },
-    { note: "D#5", freq: 622.25, type: "black", key: "p" },
-    { note: "E5",  freq: 659.25, type: "white", key: ";" } // For US keyboards
+    { note: "C4",  freq: 261.63, type: "white", keyUS: "a", keyDE: "a" },
+    { note: "C#4", freq: 277.18, type: "black", keyUS: "w", keyDE: "w" },
+    { note: "D4",  freq: 293.66, type: "white", keyUS: "s", keyDE: "s" },
+    { note: "D#4", freq: 311.13, type: "black", keyUS: "e", keyDE: "e" },
+    { note: "E4",  freq: 329.63, type: "white", keyUS: "d", keyDE: "d" },
+    { note: "F4",  freq: 349.23, type: "white", keyUS: "f", keyDE: "f" },
+    { note: "F#4", freq: 369.99, type: "black", keyUS: "t", keyDE: "t" },
+    { note: "G4",  freq: 392.00, type: "white", keyUS: "g", keyDE: "g" },
+    { note: "G#4", freq: 415.30, type: "black", keyUS: "y", keyDE: "z" },
+    { note: "A4",  freq: 440.00, type: "white", keyUS: "h", keyDE: "h" },
+    { note: "A#4", freq: 466.16, type: "black", keyUS: "u", keyDE: "u" },
+    { note: "B4",  freq: 493.88, type: "white", keyUS: "j", keyDE: "j" },
+    { note: "C5",  freq: 523.25, type: "white", keyUS: "k", keyDE: "k" },
+    { note: "C#5", freq: 554.37, type: "black", keyUS: "o", keyDE: "o" },
+    { note: "D5",  freq: 587.33, type: "white", keyUS: "l", keyDE: "l" },
+    { note: "D#5", freq: 622.25, type: "black", keyUS: "p", keyDE: "p" },
+    { note: "E5",  freq: 659.25, type: "white", keyUS: ";", keyDE: "ö" } 
 ];
 
 // --- synth.js ---
@@ -116,6 +116,7 @@ class Synth {
 document.addEventListener('DOMContentLoaded', () => {
 
     const synth = new Synth();
+    let currentLayout = 'US';
 
     function getSettings() {
         return {
@@ -134,14 +135,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function play(freq, key) {
-        synth.playNote(freq, key, getSettings());
-        setKeyActive(key, true);
+    function play(freq, idx) {
+        synth.playNote(freq, idx, getSettings());
+        setKeyActive(idx, true);
     }
 
-    function stop(key) {
-        synth.stopNote(key);
-        setKeyActive(key, false);
+    function stop(idx) {
+        synth.stopNote(idx);
+        setKeyActive(idx, false);
     }
 
     // Build Piano UI
@@ -149,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     notes.forEach((n, idx) => {
         const div = document.createElement('div');
-        div.id = 'key-' + n.key;
+        div.id = 'key-' + idx; // Use index as ID for stability
         div.classList.add('key');
         
         // Classes for styling
@@ -168,27 +169,50 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Label
-        div.innerHTML = `<span class="key-hint">${n.key.toUpperCase()}</span>`;
+        const label = n.keyUS.toUpperCase();
+        div.innerHTML = `<span class="key-hint" id="hint-${idx}">${label}</span>`;
 
         // Mouse Interaction
-        div.addEventListener('mousedown', () => play(n.freq, n.key));
-        div.addEventListener('mouseup', () => stop(n.key));
-        div.addEventListener('mouseleave', () => stop(n.key));
+        div.addEventListener('mousedown', () => play(n.freq, idx));
+        div.addEventListener('mouseup', () => stop(idx));
+        div.addEventListener('mouseleave', () => stop(idx));
 
         pianoDiv.appendChild(div);
     });
+
+    // Helper to get active key for current layout
+    function getKeyForLayout(note, layout) {
+        return layout === 'DE' ? note.keyDE : note.keyUS;
+    }
+
+    function updateKeyHints() {
+        notes.forEach((n, idx) => {
+            const hintEl = document.getElementById(`hint-${idx}`);
+            if (hintEl) {
+                hintEl.innerText = getKeyForLayout(n, currentLayout).toUpperCase();
+            }
+        });
+    }
 
     // Keyboard Interaction
     window.addEventListener('keydown', (e) => {
         if (e.repeat) return;
         const k = e.key.toLowerCase();
-        const noteData = notes.find(n => n.key === k);
-        if (noteData) play(noteData.freq, k);
+        
+        const noteIdx = notes.findIndex(n => getKeyForLayout(n, currentLayout) === k);
+        
+        if (noteIdx !== -1) {
+            play(notes[noteIdx].freq, noteIdx);
+        }
     });
 
     window.addEventListener('keyup', (e) => {
         const k = e.key.toLowerCase();
-        if (notes.find(n => n.key === k)) stop(k);
+        const noteIdx = notes.findIndex(n => getKeyForLayout(n, currentLayout) === k);
+        
+        if (noteIdx !== -1) {
+            stop(noteIdx);
+        }
     });
 
     // Controls
@@ -196,6 +220,17 @@ document.addEventListener('DOMContentLoaded', () => {
     varianceSlider.addEventListener('input', (e) => {
         document.getElementById('varianceVal').innerText = e.target.value;
     });
+
+    // Layout Switch
+    const layoutSelect = document.getElementById('layout');
+    if (layoutSelect) {
+        layoutSelect.addEventListener('change', (e) => {
+            currentLayout = e.target.value;
+            updateKeyHints();
+            // Stop all notes when switching layouts to prevent stuck keys
+            Object.keys(synth.activeVoices).forEach(key => stop(key));
+        });
+    }
 
     // Audio Context Start
     document.getElementById('overlay').addEventListener('click', function() {

@@ -18,7 +18,35 @@ body {
     border-top: 4px solid #444;
 }
 
-h2 { margin: 0 0 20px 0; color: #fff; letter-spacing: 1px; }
+/* Header Config */
+.synth-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 15px;
+}
+
+.synth-header h2 {
+    margin: 0;
+    color: #fff;
+    letter-spacing: 1px;
+}
+
+.config-group select {
+    background: #222;
+    color: #888;
+    border: 1px solid #444;
+    padding: 4px 8px;
+    font-size: 11px;
+    border-radius: 4px;
+}
+
+.config-group select:hover {
+    color: #ccc;
+    border-color: #666;
+}
 
 .controls-row {
     display: flex;
