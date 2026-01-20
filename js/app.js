@@ -46,7 +46,7 @@ class Synth {
 
     init() {
         if (!this.audioCtx) {
-            this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            this.audioCtx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
         }
         if (this.audioCtx.state === 'suspended') {
             this.audioCtx.resume();
@@ -179,6 +179,22 @@ document.addEventListener('DOMContentLoaded', () => {
         // Label
         const label = n.keyUS.toUpperCase();
         div.innerHTML = `<span class="key-hint" id="hint-${idx}">${label}</span>`;
+
+        // Touch Interaction (for lower latency on mobile)
+        div.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            play(n.freq, idx);
+        }, { passive: false });
+
+        div.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            stop(idx);
+        });
+
+        div.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            stop(idx);
+        });
 
         // Pointer Interaction (Mouse & Touch)
         div.addEventListener('pointerdown', (e) => {
