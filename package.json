@@ -1,0 +1,28 @@
+{
+  "name": "uncertain-keys",
+  "version": "1.0.0",
+  "description": "A virtual synthesizer that explores pitch uncertainty. Instead of playing a fixed frequency for every note, this synthesizer samples a pitch from a Gaussian distribution centered around the target frequency.",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "jest": {
+    "testEnvironment": "jsdom"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chris-lep/uncertain-keys.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/chris-lep/uncertain-keys/issues"
+  },
+  "homepage": "https://github.com/chris-lep/uncertain-keys#readme",
+  "devDependencies": {
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0"
+  }
+}

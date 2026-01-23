@@ -46,3 +46,24 @@ The synthesizer can be accessed at the repository's associated GitHub Pages URL 
 - `index.html`: Main application entry point.
 - `css/`: Styling (`style.css`).
 - `js/`: Application logic (`app.js`).
+
+## Development
+
+While the project runs as a static site (no build step required), it includes a test suite to ensure the mathematical logic and audio synthesis behaviors are correct.
+
+### Prerequisites
+- **Node.js** (v14 or higher) is required to run the tests.
+
+### Setup
+Install the development dependencies:
+```bash
+npm install
+```
+
+### Running Tests
+Run the Jest test suite:
+```bash
+npm test
+```
+
+The tests use **JSDOM** to simulate the browser environment, allowing verification of the application logic without needing a browser window.
