@@ -118,7 +118,7 @@ class Synth {
         
         osc.start();
 
-        this.activeVoices[keyId] = { osc, gainNode };
+        this.activeVoices[keyId] = { osc, gainNode, filter };
     }
 
     stopNote(keyId) {
@@ -330,7 +330,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const cutoffSlider = document.getElementById('cutoff');
     cutoffSlider.addEventListener('input', (e) => {
-        document.getElementById('cutoffVal').innerText = e.target.value;
+        const val = e.target.value;
+        document.getElementById('cutoffVal').innerText = val;
+        
+        // Update active voices in real-time
+        if (synth && synth.activeVoices && synth.audioCtx) {
+            const now = synth.audioCtx.currentTime;
+            Object.values(synth.activeVoices).forEach(voice => {
+                if (voice.filter) {
+                    voice.filter.frequency.setValueAtTime(val, now);
+                }
+            });
+        }
     });
 
     // Layout Switch
