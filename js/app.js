@@ -57,7 +57,7 @@ class Synth {
         if (!this.audioCtx) return;
         if (this.activeVoices[keyId]) return; // Monophonic per key
 
-        const { variance, waveType, cutoff, octaveShift } = settings;
+        const { variance, waveType, cutoff, octaveShift, driftDirection, driftMean, driftSpread } = settings;
         
         // Shift base frequency by octave: freq * 2^shift
         const baseFreq = freq * Math.pow(2, parseInt(octaveShift) || 0);
@@ -67,7 +67,36 @@ class Synth {
         // 1. Oscillator (Source)
         const osc = this.audioCtx.createOscillator();
         osc.type = waveType;
+        
+        // Pitch Drift Logic
         osc.frequency.setValueAtTime(finalFreq, now);
+
+        const dMean = parseFloat(driftMean);
+        const dSpread = parseFloat(driftSpread);
+
+        if (dMean > 0 || dSpread > 0) {
+            // Determine Direction (1 = Up, -1 = Down)
+            const dirProb = parseInt(driftDirection) / 100; // 0.0 to 1.0
+            const direction = Math.random() < dirProb ? 1 : -1;
+
+            // Determine Speed (Cents per second)
+            // Gaussian centered at dMean with stdDev dSpread
+            let speed = dMean + (gaussianRandom() * dSpread);
+            
+            // Apply drift
+            const driftRate = direction * speed; // Cents per second
+            
+            // Calculate target after a long duration (e.g., 60s) to simulate continuous drift
+            const duration = 60; 
+            const totalDriftCents = driftRate * duration;
+            const targetFreq = finalFreq * Math.pow(2, totalDriftCents / 1200);
+
+            // Use exponential ramp for linear perceived pitch change
+            // Protect against 0 or negative freq (though pow(2,...) is always positive)
+            if (targetFreq > 0) {
+                osc.frequency.exponentialRampToValueAtTime(targetFreq, now + duration);
+            }
+        }
 
         // 2. Filter (Tone)
         const filter = this.audioCtx.createBiquadFilter();
@@ -126,7 +155,10 @@ document.addEventListener('DOMContentLoaded', () => {
             variance: document.getElementById('variance').value,
             waveType: document.getElementById('waveform').value,
             cutoff: document.getElementById('cutoff').value,
-            octaveShift: octaveShift
+            octaveShift: octaveShift,
+            driftDirection: document.getElementById('driftDirection').value,
+            driftMean: document.getElementById('driftMean').value,
+            driftSpread: document.getElementById('driftSpread').value
         };
     }
 
@@ -279,6 +311,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const varianceSlider = document.getElementById('variance');
     varianceSlider.addEventListener('input', (e) => {
         document.getElementById('varianceVal').innerText = e.target.value;
+    });
+
+    const driftDirSlider = document.getElementById('driftDirection');
+    driftDirSlider.addEventListener('input', (e) => {
+        document.getElementById('driftDirectionVal').innerText = e.target.value + "%";
+    });
+
+    const driftMeanSlider = document.getElementById('driftMean');
+    driftMeanSlider.addEventListener('input', (e) => {
+        document.getElementById('driftMeanVal').innerText = e.target.value;
+    });
+
+    const driftSpreadSlider = document.getElementById('driftSpread');
+    driftSpreadSlider.addEventListener('input', (e) => {
+        document.getElementById('driftSpreadVal').innerText = e.target.value;
     });
 
     // Layout Switch
