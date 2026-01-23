@@ -281,6 +281,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('varianceVal').innerText = e.target.value;
     });
 
+    const cutoffSlider = document.getElementById('cutoff');
+    cutoffSlider.addEventListener('input', (e) => {
+        document.getElementById('cutoffVal').innerText = e.target.value;
+    });
+
     // Layout Switch
     const layoutSelect = document.getElementById('layout');
     if (layoutSelect) {
