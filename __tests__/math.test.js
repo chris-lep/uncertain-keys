@@ -62,6 +62,8 @@ describe('Uncertain Keys Logic', () => {
         const augmentedContent = appJsContent + `
             try { window.notes = notes; } catch(e) {}
             try { window.Synth = Synth; } catch(e) {}
+            try { window.gaussianRandom = gaussianRandom; } catch(e) {}
+            try { window.getGaussianPitch = getGaussianPitch; } catch(e) {}
         `;
         window.eval(augmentedContent);
     });

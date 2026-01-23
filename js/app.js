@@ -1,4 +1,5 @@
 /* Bundle of app logic to allow file:// execution */
+"use strict";
 
 // --- utils.js ---
 function gaussianRandom() {
