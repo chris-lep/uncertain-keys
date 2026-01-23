@@ -46,4 +46,3 @@ The synthesizer can be accessed at the repository's associated GitHub Pages URL 
 - `index.html`: Main application entry point.
 - `css/`: Styling (`style.css`).
 - `js/`: Application logic (`app.js`).
-- `experimental/`: Advanced versions currently under development (work in progress).
