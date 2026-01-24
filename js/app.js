@@ -1,7 +1,6 @@
-/* Bundle of app logic to allow file:// execution */
 "use strict";
 
-// --- utils.js ---
+// --- utils ---
 function gaussianRandom() {
     let u = 0, v = 0;
     while(u === 0) u = Math.random(); 
@@ -17,7 +16,7 @@ function getGaussianPitch(baseFreq, varianceCents) {
     return baseFreq * Math.pow(2, deviation / 1200);
 }
 
-// --- notes.js ---
+// --- notes ---
 const notes = [
     { note: "C4",  freq: 261.63, type: "white", keyUS: "a", keyDE: "a" },
     { note: "C#4", freq: 277.18, type: "black", keyUS: "w", keyDE: "w" },
@@ -38,7 +37,7 @@ const notes = [
     { note: "E5",  freq: 659.25, type: "white", keyUS: ";", keyDE: "ö" } 
 ];
 
-// --- synth.js ---
+// --- synth ---
 class Synth {
     constructor() {
         this.audioCtx = null;
@@ -87,7 +86,7 @@ class Synth {
             // Apply drift
             const driftRate = direction * speed; // Cents per second
             
-            // Calculate target after a long duration (e.g., 60s) to simulate continuous drift
+            // Calculate target after a long duration (60s) to simulate continuous drift
             const duration = 60; 
             const totalDriftCents = driftRate * duration;
             const targetFreq = finalFreq * Math.pow(2, totalDriftCents / 1200);
@@ -142,7 +141,7 @@ class Synth {
     }
 }
 
-// --- main.js ---
+// --- main ---
 
 // Ensure DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -248,10 +247,6 @@ document.addEventListener('DOMContentLoaded', () => {
             stop(idx);
         });
         
-        // Note: pointerleave is not needed if we use setPointerCapture, 
-        // as the element "holds" the pointer until release.
-        // This satisfies "holding a note while pressing it" even if the finger wiggles.
-
         pianoDiv.appendChild(div);
     });
 
