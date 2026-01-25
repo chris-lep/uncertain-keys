@@ -18,6 +18,10 @@ describe('Uncertain Keys Logic', () => {
                 setValueAtTime: jest.fn(),
                 exponentialRampToValueAtTime: jest.fn()
             },
+            detune: {
+                setValueAtTime: jest.fn(),
+                linearRampToValueAtTime: jest.fn()
+            },
             connect: jest.fn(),
             start: jest.fn(),
             stop: jest.fn()
@@ -207,8 +211,8 @@ describe('Uncertain Keys Logic', () => {
 
             synth.playNote(440, 0, settings);
 
-            // Should call exponentialRampToValueAtTime for pitch drift
-            expect(mockOscillator.frequency.exponentialRampToValueAtTime).toHaveBeenCalled();
+            // Should call linearRampToValueAtTime on detune for pitch drift
+            expect(mockOscillator.detune.linearRampToValueAtTime).toHaveBeenCalled();
         });
 
         test('stopNote stops the oscillator and releases gain', () => {

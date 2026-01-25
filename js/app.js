@@ -86,16 +86,14 @@ class Synth {
             // Apply drift
             const driftRate = direction * speed; // Cents per second
             
-            // Calculate target after a long duration (60s) to simulate continuous drift
-            const duration = 60; 
-            const totalDriftCents = driftRate * duration;
-            const targetFreq = finalFreq * Math.pow(2, totalDriftCents / 1200);
+            // Refactored: Use detune for infinite drift (safe for long durations)
+            // 24 hours = 86400 seconds
+            const duration = 86400; 
+            const targetDetune = driftRate * duration;
 
-            // Use exponential ramp for linear perceived pitch change
-            // Protect against 0 or negative freq (though pow(2,...) is always positive)
-            if (targetFreq > 0) {
-                osc.frequency.exponentialRampToValueAtTime(targetFreq, now + duration);
-            }
+            // Use linear ramp on detune (which equals exponential frequency change)
+            osc.detune.setValueAtTime(0, now);
+            osc.detune.linearRampToValueAtTime(targetDetune, now + duration);
         }
 
         // 2. Filter (Tone)
