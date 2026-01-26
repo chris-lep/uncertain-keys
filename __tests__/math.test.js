@@ -233,6 +233,56 @@ describe('Uncertain Keys Logic', () => {
             expect(mockOscillator.detune.linearRampToValueAtTime).toHaveBeenCalled();
         });
 
+        test('uniform drift uses minimum and maximum range', () => {
+            synth.init();
+            const originalRandom = Math.random;
+            Math.random = jest.fn(() => 0); // Choose minimum
+
+            const settings = {
+                variance: 0,
+                waveType: 'sine',
+                cutoff: 1000,
+                octaveShift: 0,
+                driftDirection: 100, // Force UP
+                driftMode: 'uniform',
+                driftMean: 10,  // Minimum
+                driftSpread: 20 // Maximum
+            };
+
+            synth.playNote(440, 0, settings);
+
+            const duration = 86400;
+            expect(mockOscillator.detune.linearRampToValueAtTime)
+                .toHaveBeenCalledWith(10 * duration, expect.any(Number));
+
+            Math.random = originalRandom;
+        });
+
+        test('uniform drift swaps min/max when provided out of order', () => {
+            synth.init();
+            const originalRandom = Math.random;
+            Math.random = jest.fn(() => 0); // Choose minimum after swap
+
+            const settings = {
+                variance: 0,
+                waveType: 'sine',
+                cutoff: 1000,
+                octaveShift: 0,
+                driftDirection: 100, // Force UP
+                driftMode: 'uniform',
+                driftMean: 25,  // Intended maximum
+                driftSpread: 5  // Intended minimum
+            };
+
+            synth.playNote(440, 0, settings);
+
+            const duration = 86400;
+            expect(mockOscillator.detune.linearRampToValueAtTime)
+                .toHaveBeenCalledWith(5 * duration, expect.any(Number));
+
+            Math.random = originalRandom;
+        });
+
         test('stopNote stops the oscillator and releases gain', () => {
             synth.init();
             const settings = { variance: 0, waveType: 'sine', cutoff: 1000, octaveShift: 0, driftDirection: 50, driftMode: 'gaussian', driftMean: 0, driftSpread: 0 };

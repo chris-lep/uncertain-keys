@@ -45,12 +45,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         
         <div class="controls-row">
             <div class="control-group">
-                <label>Pitch Instability (Cents)</label>
-                <input type="range" id="variance" min="0" max="100" value="0" step="1">
-                <span id="varianceVal" style="font-size:12px; color:#ff9d00">0</span>
-            </div>
-
-            <div class="control-group">
                 <label>Waveform</label>
                 <select id="waveform">
                     <option value="sine">Sine</option>
@@ -67,6 +61,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             </div>
 
             <div class="control-group">
+                <label>Pitch Instability (Cents)</label>
+                <input type="range" id="variance" min="0" max="100" value="0" step="1">
+                <span id="varianceVal" style="font-size:12px; color:#ff9d00">0</span>
+            </div>
+
+            <div class="control-group">
                 <label>Octave Shift</label>
                 <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
                     <button id="octaveDown" class="octave-btn">−</button>
@@ -78,17 +78,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <div class="controls-row">
             <div class="control-group">
-                <label>Drift Direction (% Up)</label>
-                <input type="range" id="driftDirection" min="0" max="100" value="50" step="1">
-                <span id="driftDirectionVal" style="font-size:12px; color:#ff9d00">50%</span>
-            </div>
-
-            <div class="control-group">
                 <label for="driftMode">Drift Distribution</label>
                 <select id="driftMode">
                     <option value="gaussian">Gaussian</option>
                     <option value="uniform">Uniform</option>
                 </select>
+            </div>
+
+            <div class="control-group">
+                <label>Drift Direction (% Up)</label>
+                <input type="range" id="driftDirection" min="0" max="100" value="50" step="1">
+                <span id="driftDirectionVal" style="font-size:12px; color:#ff9d00">50%</span>
             </div>
             
             <div class="control-group">
