@@ -52,16 +52,21 @@ The synthesizer can be accessed at the repository's associated GitHub Pages URL 
 While the project runs as a static site (no build step required), it includes a test suite to ensure the mathematical logic and audio synthesis behaviors are correct.
 
 ### Prerequisites
+
 - **Node.js** (v14 or higher) is required to run the tests.
 
 ### Setup
+
 Install the development dependencies:
+
 ```bash
 npm install
 ```
 
 ### Running Tests
+
 Run the Jest test suite:
+
 ```bash
 npm test
 ```
@@ -72,9 +77,12 @@ The tests use **JSDOM** to simulate the browser environment, allowing verificati
 
 Christopher Lepenik
 
-## Citation Request
+## Attribution & Citation
 
-If this software and/or its underlying idea is used in academic or artistic work, please cite the author (Christopher Lepenik) and the project.
+If you use the Uncertain Keys Synthesizer in a musical recording, performance, research, or other academic or artistic work, please credit the instrument and its creator.
+
+Suggested attribution:
+> Instrument: Uncertain Keys Synthesizer by Christopher Lepenik (GitHub - chris-lep/uncertain-keys: A probabilistically tuned virtual synthesizer)
 
 ## License
 
