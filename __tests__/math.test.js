@@ -175,6 +175,7 @@ describe('Uncertain Keys Logic', () => {
                 cutoff: 1000,
                 octaveShift: 0,
                 driftDirection: 50,
+                driftMode: 'gaussian',
                 driftMean: 0,
                 driftSpread: 0
             };
@@ -202,6 +203,7 @@ describe('Uncertain Keys Logic', () => {
                 cutoff: 1000,
                 octaveShift: 1, // Shift up one octave
                 driftDirection: 50,
+                driftMode: 'gaussian',
                 driftMean: 0,
                 driftSpread: 0
             };
@@ -220,6 +222,7 @@ describe('Uncertain Keys Logic', () => {
                 cutoff: 1000,
                 octaveShift: 0,
                 driftDirection: 100, // Force UP
+                driftMode: 'gaussian',
                 driftMean: 100,      // Fast drift
                 driftSpread: 0
             };
@@ -232,7 +235,7 @@ describe('Uncertain Keys Logic', () => {
 
         test('stopNote stops the oscillator and releases gain', () => {
             synth.init();
-            const settings = { variance: 0, waveType: 'sine', cutoff: 1000, octaveShift: 0, driftDirection: 50, driftMean: 0, driftSpread: 0 };
+            const settings = { variance: 0, waveType: 'sine', cutoff: 1000, octaveShift: 0, driftDirection: 50, driftMode: 'gaussian', driftMean: 0, driftSpread: 0 };
             
             // Start note 0
             synth.playNote(440, 0, settings);
@@ -248,7 +251,7 @@ describe('Uncertain Keys Logic', () => {
 
         test('activeVoices prevents double playing', () => {
             synth.init();
-            const settings = { variance: 0, waveType: 'sine', cutoff: 1000, octaveShift: 0, driftDirection: 50, driftMean: 0, driftSpread: 0 };
+            const settings = { variance: 0, waveType: 'sine', cutoff: 1000, octaveShift: 0, driftDirection: 50, driftMode: 'gaussian', driftMean: 0, driftSpread: 0 };
 
             synth.playNote(440, 0, settings);
             synth.playNote(440, 0, settings); // Call again with same keyId

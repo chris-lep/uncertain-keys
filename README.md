@@ -8,6 +8,7 @@ A virtual synthesizer that explores pitch uncertainty and drift. Instead of play
 - **Logarithmic Distribution**: The pitch variation is calculated in cents (logarithmic space) to ensure consistent perceived variation across the frequency spectrum.
 - **Tunable Variance**: You can adjust the standard deviation (in cents) to control how "out of tune" or unstable the synthesizer sounds.
 - **Drifting Pitch**: Notes can glide in pitch over time with randomized speed and direction.
+- **Drift Distributions**: Choose Gaussian drift (mean/spread) or Uniform drift (minimum/maximum).
 - **Octave Control**: Shift the entire keyboard range up or down by arbitrary octaves to explore different registers.
 - **Web Audio API**: Runs entirely in the browser using the Web Audio API.
 - **Keyboard Support**: Play using your computer keyboard (supports both US and German layouts) or by clicking the on-screen keys.
@@ -25,8 +26,9 @@ A virtual synthesizer that explores pitch uncertainty and drift. Instead of play
   - **Filter Cutoff**: Adjusts the brightness of the sound.
   - **Octave**: Buttons to visually shift the octave.
   - **Drift Direction**: Probability of the pitch gliding Up vs. Down.
-  - **Mean Drift Speed**: Average speed of pitch change (cents/s).
-  - **Drift Spread**: Random variation in drift speed.
+  - **Drift Distribution**: Choose Gaussian (mean/spread) or Uniform (minimum/maximum).
+  - **Mean Drift Speed / Drift Spread**: Gaussian mode controls for average drift and variation (cents/s).
+  - **Minimum Drift / Maximum Drift**: Uniform mode controls for minimum and maximum drift speed (cents/s).
 
 ## Usage
 

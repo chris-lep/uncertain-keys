@@ -72,7 +72,7 @@ class Synth {
         if (!this.audioCtx) return;
         if (this.activeVoices[keyId]) return; // Monophonic per key
 
-        const { variance, waveType, cutoff, octaveShift, driftDirection, driftMean, driftSpread } = settings;
+        const { variance, waveType, cutoff, octaveShift, driftDirection, driftMode, driftMean, driftSpread } = settings;
         
         // Shift base frequency by octave: freq * 2^shift
         const baseFreq = freq * Math.pow(2, parseInt(octaveShift) || 0);
@@ -95,8 +95,20 @@ class Synth {
             const direction = Math.random() < dirProb ? 1 : -1;
 
             // Determine Speed (Cents per second)
-            // Gaussian centered at dMean with stdDev dSpread
-            let speed = dMean + (gaussianRandom() * dSpread);
+            let speed;
+            if (driftMode === 'uniform') {
+                let min = dMean;
+                let max = dSpread;
+                if (max < min) {
+                    const tmp = min;
+                    min = max;
+                    max = tmp;
+                }
+                speed = min + (Math.random() * (max - min));
+            } else {
+                // Gaussian centered at dMean with stdDev dSpread
+                speed = dMean + (gaussianRandom() * dSpread);
+            }
             
             // Apply drift
             const driftRate = direction * speed; // Cents per second
@@ -170,6 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
             cutoff: document.getElementById('cutoff').value,
             octaveShift: octaveShift,
             driftDirection: document.getElementById('driftDirection').value,
+            driftMode: (document.getElementById('driftMode') || {}).value || 'gaussian',
             driftMean: document.getElementById('driftMean').value,
             driftSpread: document.getElementById('driftSpread').value
         };
@@ -336,6 +349,26 @@ document.addEventListener('DOMContentLoaded', () => {
     driftSpreadSlider.addEventListener('input', (e) => {
         document.getElementById('driftSpreadVal').innerText = e.target.value;
     });
+
+    const driftModeSelect = document.getElementById('driftMode');
+    const driftMeanLabel = document.getElementById('driftMeanLabel');
+    const driftSpreadLabel = document.getElementById('driftSpreadLabel');
+
+    function updateDriftLabels() {
+        if (!driftModeSelect) return;
+        const isUniform = driftModeSelect.value === 'uniform';
+        if (driftMeanLabel) {
+            driftMeanLabel.innerText = isUniform ? 'Minimum Drift (cts/s)' : 'Mean Drift Speed (cts/s)';
+        }
+        if (driftSpreadLabel) {
+            driftSpreadLabel.innerText = isUniform ? 'Maximum Drift (cts/s)' : 'Drift Spread (cts/s)';
+        }
+    }
+
+    if (driftModeSelect) {
+        driftModeSelect.addEventListener('change', updateDriftLabels);
+        updateDriftLabels();
+    }
 
     const cutoffSlider = document.getElementById('cutoff');
     cutoffSlider.addEventListener('input', (e) => {
