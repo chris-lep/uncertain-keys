@@ -68,6 +68,16 @@ npm test
 
 The tests use **JSDOM** to simulate the browser environment, allowing verification of the application logic without needing a browser window.
 
+## Author
+
+Christopher Lepenik
+
+## Citation Request
+
+If this software and/or its underlying idea is used in academic or artistic work, please cite the author (Christopher Lepenik) and the project.
+
 ## License
 
-GPL v3. See `LICENSE`.
+Copyright (c) 2026 Christopher Lepenik.
+
+This project is licensed under the GNU General Public License v3.0 only (GPL-3.0-only). You may redistribute and/or modify it under the terms of the GPL v3. This software is provided without warranty; see `LICENSE` for the full text and details.

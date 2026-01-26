@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+title: Uncertain Keys Synthesizer
+message: "If you use this software or the underlying idea in academic or artistic work, please cite the author and project."
+type: software
+authors:
+  - family-names: Lepenik
+    given-names: Christopher
+version: 2.1.1
+date-released: 2026-01-26
+license: GPL-3.0-only
+repository-code: https://github.com/chris-lep/uncertain-keys
