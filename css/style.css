@@ -31,6 +31,9 @@ body {
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.6);
     border-top: 4px solid #444;
+    width: 920px;
+    max-width: 95vw;
+    box-sizing: border-box;
 }
 
 /* Header Config */
@@ -94,12 +97,15 @@ body {
     padding: 15px;
     border-radius: 8px;
     border: 1px solid #333;
+    align-items: flex-start;
 }
 
 .control-group {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    min-width: 150px;
+    width: 180px;
 }
 
 label { font-size: 12px; text-transform: uppercase; color: #aaa; letter-spacing: 0.5px; }
