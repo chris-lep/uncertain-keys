@@ -37,6 +37,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     <option value="US">US</option>
                     <option value="DE">DE</option>
                 </select>
+                <button id="aboutBtn" class="about-btn" type="button" aria-haspopup="dialog" aria-controls="aboutModal">
+                    About
+                </button>
             </div>
         </div>
         
@@ -95,6 +98,34 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <div class="piano-container" id="piano">
             </div>
+    </div>
+
+    <div class="about-modal" id="aboutModal" aria-hidden="true" role="dialog" aria-labelledby="aboutTitle">
+        <div class="about-content" role="document">
+            <button class="about-close" id="aboutClose" type="button" aria-label="Close About dialog">×</button>
+            <h3 id="aboutTitle">About Uncertain Keys Synth</h3>
+            <p><strong>Version:</strong> 2.1.1</p>
+            <p><strong>Author:</strong> Christopher Lepenik</p>
+            <p>
+                Uncertain Keys Synth explores pitch uncertainty and drift in a playable web-based instrument.
+                Each note is sampled from a Gaussian distribution and can glide over time with randomized speed and direction.
+            </p>
+            <h4>Attribution & Citation</h4>
+            <p>
+                If you use this instrument in a musical recording, performance, research, or other academic or artistic work,
+                please credit the instrument and its creator.
+            </p>
+            <p class="about-quote">
+                Instrument: Uncertain Keys Synthesizer by Christopher Lepenik (GitHub - chris-lep/uncertain-keys:
+                A probabilistically tuned virtual synthesizer)
+            </p>
+            <h4>License</h4>
+            <p>
+                Copyright (c) 2026 Christopher Lepenik.
+                Licensed under GNU GPL v3.0 only (GPL-3.0-only). This software is provided without warranty.
+                See LICENSE for details.
+            </p>
+        </div>
     </div>
 
     <script src="js/app.js"></script>

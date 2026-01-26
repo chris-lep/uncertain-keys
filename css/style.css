@@ -63,6 +63,29 @@ body {
     border-color: #666;
 }
 
+.config-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.about-btn {
+    background: #2a2a2a;
+    color: #ccc;
+    border: 1px solid #444;
+    padding: 4px 10px;
+    font-size: 11px;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.about-btn:hover {
+    color: #fff;
+    border-color: #666;
+}
+
 .controls-row {
     display: flex;
     gap: 30px;
@@ -209,3 +232,70 @@ select {
 
 .overlay h1 { font-size: 24px; font-weight: normal; }
 .overlay p { color: #aaa; margin-top: 10px; }
+
+.about-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+}
+
+.about-modal.open {
+    display: flex;
+}
+
+.about-content {
+    background: #1f1f1f;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 20px 22px;
+    max-width: 560px;
+    width: 100%;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    position: relative;
+}
+
+.about-content h3 {
+    margin: 0 0 10px 0;
+}
+
+.about-content h4 {
+    margin: 14px 0 6px 0;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #bbb;
+}
+
+.about-content p {
+    margin: 8px 0;
+    color: #ddd;
+    line-height: 1.4;
+    font-size: 13px;
+}
+
+.about-quote {
+    background: #151515;
+    border-left: 3px solid #ff9d00;
+    padding: 8px 10px;
+    font-style: italic;
+}
+
+.about-close {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    color: #aaa;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.about-close:hover {
+    color: #fff;
+}

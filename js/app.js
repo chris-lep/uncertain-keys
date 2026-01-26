@@ -390,4 +390,36 @@ document.addEventListener('DOMContentLoaded', () => {
     overlay.addEventListener('click', startAudio);
     overlay.addEventListener('pointerdown', startAudio);
 
+    // About Modal
+    const aboutBtn = document.getElementById('aboutBtn');
+    const aboutModal = document.getElementById('aboutModal');
+    const aboutClose = document.getElementById('aboutClose');
+
+    function openAbout() {
+        if (!aboutModal) return;
+        aboutModal.classList.add('open');
+        aboutModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeAbout() {
+        if (!aboutModal) return;
+        aboutModal.classList.remove('open');
+        aboutModal.setAttribute('aria-hidden', 'true');
+    }
+
+    if (aboutBtn) {
+        aboutBtn.addEventListener('click', () => openAbout());
+    }
+    if (aboutClose) {
+        aboutClose.addEventListener('click', () => closeAbout());
+    }
+    if (aboutModal) {
+        aboutModal.addEventListener('click', (e) => {
+            if (e.target === aboutModal) closeAbout();
+        });
+    }
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeAbout();
+    });
+
 });

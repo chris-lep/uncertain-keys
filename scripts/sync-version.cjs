@@ -4,6 +4,7 @@ const path = require("path");
 const rootDir = path.resolve(__dirname, "..");
 const pkgPath = path.join(rootDir, "package.json");
 const citationPath = path.join(rootDir, "CITATION.cff");
+const indexPath = path.join(rootDir, "index.html");
 
 const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
 const version = pkg.version;
@@ -23,4 +24,15 @@ const nextCitation = citation.match(/^version:\s*/m)
 
 if (nextCitation !== citation) {
   fs.writeFileSync(citationPath, nextCitation);
+}
+
+if (fs.existsSync(indexPath)) {
+  const indexHtml = fs.readFileSync(indexPath, "utf8");
+  const nextIndex = indexHtml.replace(
+    /(<strong>Version:<\/strong>\s*)([^<]+)/,
+    `$1${version}`
+  );
+  if (nextIndex !== indexHtml) {
+    fs.writeFileSync(indexPath, nextIndex);
+  }
 }
