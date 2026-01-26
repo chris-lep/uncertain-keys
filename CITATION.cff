@@ -5,7 +5,7 @@ type: software
 authors:
   - family-names: Lepenik
     given-names: Christopher
-version: 2.1.1
+version: 2.2.0
 date-released: 2026-01-26
 license: GPL-3.0-only
 repository-code: https://github.com/chris-lep/uncertain-keys
