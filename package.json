@@ -4,7 +4,8 @@
   "description": "A virtual synthesizer that explores pitch uncertainty. Instead of playing a fixed frequency for every note, this synthesizer samples a pitch from a Gaussian distribution centered around the target frequency.",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "version": "node scripts/sync-version.cjs"
   },
   "jest": {
     "testEnvironment": "jsdom"
