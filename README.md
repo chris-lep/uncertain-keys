@@ -67,3 +67,7 @@ npm test
 ```
 
 The tests use **JSDOM** to simulate the browser environment, allowing verification of the application logic without needing a browser window.
+
+## License
+
+GPL v3. See `LICENSE`.

@@ -14,8 +14,8 @@
     "url": "git+https://github.com/chris-lep/uncertain-keys.git"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Christopher Lepenik",
+  "license": "GPL-3.0-only",
   "type": "commonjs",
   "bugs": {
     "url": "https://github.com/chris-lep/uncertain-keys/issues"
