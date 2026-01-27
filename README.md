@@ -1,30 +1,10 @@
 # Uncertain Keys Synthesizer
 
 Uncertain Keys is a virtual synthesizer that explores pitch uncertainty and
-drift. Instead of playing a fixed frequency for every note, it samples a pitch
-from a probability distribution around the target frequency and can glide over
-time with randomized speed and direction.
+drift. Each note is sampled from a probability distribution around the target
+frequency, then optionally glides over time at a randomized rate and direction.
 
-## Key Features
-
-- **Uncertain Pitch**: Each key press generates a slightly different pitch
-  based on a probability distribution.
-- **Logarithmic Distribution**: The pitch variation is calculated in cents
-  (logarithmic space) to ensure consistent perceived variation across the
-  frequency spectrum.
-- **Tunable Variance**: You can adjust the standard deviation (in cents) to
-  control how "out of tune" or unstable the synthesizer sounds.
-- **Drifting Pitch**: Notes can glide in pitch over time with randomized speed
-  and direction.
-- **Drift Distributions**: Choose Gaussian drift (mean/spread) or Uniform drift
-  (minimum/maximum) with a visual switch.
-- **Octave Control**: Shift the entire keyboard range up or down by arbitrary
-  octaves to explore different registers.
-- **Web Audio API**: Runs entirely in the browser using the Web Audio API.
-- **Keyboard Support**: Play using your computer keyboard (supports both US and
-  German layouts) or by clicking the on-screen keys.
-
-## Concepts
+## How It Works
 
 - **Pitch Instability (Variance)**: On note-on, the target frequency is
   perturbed by a random offset in cents. The offset is applied in logarithmic
@@ -33,11 +13,14 @@ time with randomized speed and direction.
   (upward) or negative (downward).
 - **Drift Speed**: A per-note rate in cents/second. When a note is held, its
   detune parameter ramps linearly to create continuous drift over long durations.
-- **Drift Distribution Switch**:
+- **Drift Distribution Switch** (visual toggle):
   - **Gaussian**: Drift speed is drawn from a normal distribution with mean and
     standard deviation set by the controls.
   - **Uniform**: Drift speed is drawn from a uniform distribution between a
     minimum and maximum.
+- **Play Modes**: Use on-screen keys or a computer keyboard (US and German
+  layouts supported).
+- **Engine**: Runs entirely in the browser via the Web Audio API.
 
 ## Controls
 
@@ -56,8 +39,8 @@ time with randomized speed and direction.
   - **Drift Direction**: Probability of the pitch gliding Up vs. Down.
   - **Drift Distribution Switch**: Toggle between Gaussian (mean/spread) and
     Uniform (minimum/maximum).
-  - **Mean Drift Speed / Drift Spread**: Gaussian mode controls for average
-    drift and variation (cents/s).
+  - **Mean Drift Speed / Drift Spread**: Gaussian mode controls for drift mean
+    and standard deviation (cents/s).
   - **Minimum Drift / Maximum Drift**: Uniform mode controls for minimum and
     maximum drift speed (cents/s).
 
