@@ -233,6 +233,24 @@ describe('Uncertain Keys Logic', () => {
             expect(mockOscillator.detune.linearRampToValueAtTime).toHaveBeenCalled();
         });
 
+        test('playNote skips drift when mean and spread are zero', () => {
+            synth.init();
+            const settings = {
+                variance: 0,
+                waveType: 'sine',
+                cutoff: 1000,
+                octaveShift: 0,
+                driftDirection: 50,
+                driftMode: 'gaussian',
+                driftMean: 0,
+                driftSpread: 0
+            };
+
+            synth.playNote(440, 0, settings);
+
+            expect(mockOscillator.detune.linearRampToValueAtTime).not.toHaveBeenCalled();
+        });
+
         test('uniform drift uses minimum and maximum range', () => {
             synth.init();
             const originalRandom = Math.random;
@@ -254,6 +272,88 @@ describe('Uncertain Keys Logic', () => {
             const duration = 86400;
             expect(mockOscillator.detune.linearRampToValueAtTime)
                 .toHaveBeenCalledWith(10 * duration, expect.any(Number));
+
+            Math.random = originalRandom;
+        });
+
+        test('uniform drift can use maximum when random is 1', () => {
+            synth.init();
+            const originalRandom = Math.random;
+            Math.random = jest.fn()
+                .mockReturnValueOnce(0) // Direction
+                .mockReturnValueOnce(1); // Speed -> max
+
+            const settings = {
+                variance: 0,
+                waveType: 'sine',
+                cutoff: 1000,
+                octaveShift: 0,
+                driftDirection: 100, // Force UP
+                driftMode: 'uniform',
+                driftMean: 10,  // Minimum
+                driftSpread: 20 // Maximum
+            };
+
+            synth.playNote(440, 0, settings);
+
+            const duration = 86400;
+            expect(mockOscillator.detune.linearRampToValueAtTime)
+                .toHaveBeenCalledWith(20 * duration, expect.any(Number));
+
+            Math.random = originalRandom;
+        });
+
+        test('uniform drift respects downward direction when probability is 0', () => {
+            synth.init();
+            const originalRandom = Math.random;
+            Math.random = jest.fn()
+                .mockReturnValueOnce(0.9) // Direction -> down
+                .mockReturnValueOnce(0);  // Speed -> min
+
+            const settings = {
+                variance: 0,
+                waveType: 'sine',
+                cutoff: 1000,
+                octaveShift: 0,
+                driftDirection: 0, // Force DOWN
+                driftMode: 'uniform',
+                driftMean: 10,  // Minimum
+                driftSpread: 20 // Maximum
+            };
+
+            synth.playNote(440, 0, settings);
+
+            const duration = 86400;
+            expect(mockOscillator.detune.linearRampToValueAtTime)
+                .toHaveBeenCalledWith(-10 * duration, expect.any(Number));
+
+            Math.random = originalRandom;
+        });
+
+        test('gaussian drift respects downward direction', () => {
+            synth.init();
+            const originalRandom = Math.random;
+            Math.random = jest.fn()
+                .mockReturnValueOnce(0.9)  // Direction -> down
+                .mockReturnValueOnce(0.5)  // gaussianRandom u
+                .mockReturnValueOnce(0.25); // gaussianRandom v => cos(pi/2)=0
+
+            const settings = {
+                variance: 0,
+                waveType: 'sine',
+                cutoff: 1000,
+                octaveShift: 0,
+                driftDirection: 0, // Force DOWN
+                driftMode: 'gaussian',
+                driftMean: 12,
+                driftSpread: 5
+            };
+
+            synth.playNote(440, 0, settings);
+
+            const duration = 86400;
+            expect(mockOscillator.detune.linearRampToValueAtTime)
+                .toHaveBeenCalledWith(-12 * duration, expect.any(Number));
 
             Math.random = originalRandom;
         });
@@ -281,6 +381,55 @@ describe('Uncertain Keys Logic', () => {
                 .toHaveBeenCalledWith(5 * duration, expect.any(Number));
 
             Math.random = originalRandom;
+        });
+
+        test('gaussian drift uses mean when gaussianRandom evaluates to zero', () => {
+            synth.init();
+            const originalRandom = Math.random;
+            Math.random = jest.fn()
+                .mockReturnValueOnce(0.1)  // Direction
+                .mockReturnValueOnce(0.5)  // gaussianRandom u
+                .mockReturnValueOnce(0.25); // gaussianRandom v => cos(pi/2)=0
+
+            const settings = {
+                variance: 0,
+                waveType: 'sine',
+                cutoff: 1000,
+                octaveShift: 0,
+                driftDirection: 100, // Force UP
+                driftMode: 'gaussian',
+                driftMean: 12,
+                driftSpread: 5
+            };
+
+            synth.playNote(440, 0, settings);
+
+            const duration = 86400;
+            expect(mockOscillator.detune.linearRampToValueAtTime)
+                .toHaveBeenCalledWith(12 * duration, expect.any(Number));
+
+            Math.random = originalRandom;
+        });
+
+        test('drift initializes detune before ramping', () => {
+            synth.init();
+            const settings = {
+                variance: 0,
+                waveType: 'sine',
+                cutoff: 1000,
+                octaveShift: 0,
+                driftDirection: 100, // Force UP
+                driftMode: 'gaussian',
+                driftMean: 10,
+                driftSpread: 0
+            };
+
+            synth.playNote(440, 0, settings);
+
+            expect(mockOscillator.detune.setValueAtTime)
+                .toHaveBeenCalledWith(0, expect.any(Number));
+            expect(mockOscillator.detune.linearRampToValueAtTime)
+                .toHaveBeenCalled();
         });
 
         test('stopNote stops the oscillator and releases gain', () => {
