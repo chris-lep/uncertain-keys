@@ -73,19 +73,19 @@ npm test
 
 The tests use **JSDOM** to simulate the browser environment, allowing verification of the application logic without needing a browser window.
 
-## Author
-
-Christopher Lepenik
-
 ## Attribution & Citation
 
-If you use the Uncertain Keys Synthesizer in a musical recording, performance, research, or other academic or artistic work, please credit the instrument and its creator.
+If you use the Uncertain Keys Synthesizer in a musical recording, performance, research, or other academic or artistic work, attribution is appreciated.
 
 Suggested attribution:
-> Instrument: Uncertain Keys Synthesizer by Christopher Lepenik (GitHub - chris-lep/uncertain-keys: A probabilistically tuned virtual synthesizer)
+> Instrument: Uncertain Keys Synthesizer
+> Created by Christopher Lepenik
+> Source: https://github.com/chris-lep/uncertain-keys
 
 ## License
 
 Copyright (c) 2026 Christopher Lepenik.
 
-This project is licensed under the GNU General Public License v3.0 only (GPL-3.0-only). You may redistribute and/or modify it under the terms of the GPL v3. This software is provided without warranty; see `LICENSE` for the full text and details.
+This project is licensed under the GNU General Public License v3.0 only (GPL-3.0-only).
+You may redistribute and/or modify it under the terms of the GPL v3.
+This software is provided without warranty; see `LICENSE` for the full text and details.

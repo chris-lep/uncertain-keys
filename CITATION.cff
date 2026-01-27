@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 title: Uncertain Keys Synthesizer
-message: "If you use this software or the underlying idea in academic or artistic work, please cite the author and project."
+message: "If you use this software or its underlying ideas in academic or artistic work, citation is appreciated."
 type: software
 authors:
   - family-names: Lepenik
