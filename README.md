@@ -78,8 +78,8 @@ The tests use **JSDOM** to simulate the browser environment, allowing verificati
 If you use the Uncertain Keys Synthesizer in a musical recording, performance, research, or other academic or artistic work, attribution is appreciated.
 
 Suggested attribution:
-> Instrument: Uncertain Keys Synthesizer
-> Created by Christopher Lepenik
+> Instrument: Uncertain Keys Synthesizer  
+> Created by Christopher Lepenik  
 > Source: https://github.com/chris-lep/uncertain-keys
 
 ## License
