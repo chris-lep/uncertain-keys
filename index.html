@@ -57,20 +57,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <div class="control-group">
                 <label>Filter Cutoff (Hz)</label>
                 <input type="range" id="cutoff" min="100" max="20000" value="20000" step="10">
-                <span id="cutoffVal" style="font-size:12px; color:#ff9d00">20000</span>
+                <span id="cutoffVal" class="value-label">20000</span>
             </div>
 
             <div class="control-group">
                 <label>Pitch Instability (Cents)</label>
                 <input type="range" id="variance" min="0" max="100" value="0" step="1">
-                <span id="varianceVal" style="font-size:12px; color:#ff9d00">0</span>
+                <span id="varianceVal" class="value-label">0</span>
             </div>
 
             <div class="control-group">
                 <label>Octave Shift</label>
                 <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
                     <button id="octaveDown" class="octave-btn">−</button>
-                    <span id="octaveVal" style="font-size:14px; color:#ff9d00; min-width: 20px; text-align: center; font-weight: bold;">0</span>
+                    <span id="octaveVal" class="value-label value-label-octave">0</span>
                     <button id="octaveUp" class="octave-btn">+</button>
                 </div>
             </div>
@@ -89,19 +89,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             <div class="control-group">
                 <label>Drift Direction (% Up)</label>
                 <input type="range" id="driftDirection" min="0" max="100" value="50" step="1">
-                <span id="driftDirectionVal" style="font-size:12px; color:#ff9d00">50%</span>
+                <span id="driftDirectionVal" class="value-label">50%</span>
             </div>
             
             <div class="control-group">
                 <label id="driftMeanLabel">Mean Drift Speed (cts/s)</label>
                 <input type="range" id="driftMean" min="0" max="200" value="0" step="0.1">
-                <span id="driftMeanVal" style="font-size:12px; color:#ff9d00">0</span>
+                <span id="driftMeanVal" class="value-label">0</span>
             </div>
 
             <div class="control-group">
                 <label id="driftSpreadLabel">Drift Spread (cts/s)</label>
                 <input type="range" id="driftSpread" min="0" max="100" value="0" step="0.1">
-                <span id="driftSpreadVal" style="font-size:12px; color:#ff9d00">0</span>
+                <span id="driftSpreadVal" class="value-label">0</span>
             </div>
         </div>
 

@@ -16,6 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 "use strict";
 
 // --- utils ---
+const DRIFT_DURATION_SECONDS = 24 * 60 * 60;
+
 function gaussianRandom() {
     let u = 0, v = 0;
     while(u === 0) u = Math.random(); 
@@ -113,9 +115,8 @@ class Synth {
             // Apply drift
             const driftRate = direction * speed; // Cents per second
             
-            // Refactored: Use detune for infinite drift (safe for long durations)
-            // 24 hours = 86400 seconds
-            const duration = 86400; 
+            // Use detune for long-duration drift (24 hours)
+            const duration = DRIFT_DURATION_SECONDS; 
             const targetDetune = driftRate * duration;
 
             // Use linear ramp on detune (which equals exponential frequency change)
