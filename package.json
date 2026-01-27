@@ -1,7 +1,7 @@
 {
   "name": "uncertain-keys",
   "version": "2.2.1",
-  "description": "A virtual synthesizer that explores pitch uncertainty. Instead of playing a fixed frequency for every note, this synthesizer samples a pitch from a Gaussian distribution centered around the target frequency.",
+  "description": "A probabilistically tuned virtual synthesizer.",
   "main": "index.js",
   "scripts": {
     "test": "jest",
