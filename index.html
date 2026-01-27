@@ -78,11 +78,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         <div class="controls-row">
             <div class="control-group">
-                <label for="driftMode">Drift Distribution</label>
-                <select id="driftMode">
-                    <option value="gaussian">Gaussian</option>
-                    <option value="uniform">Uniform</option>
-                </select>
+                <label id="driftModeLabel" for="driftMode">Drift Distribution</label>
+                <div class="toggle-switch" role="group" aria-labelledby="driftModeLabel">
+                    <span class="toggle-label toggle-label-active" id="driftModeLabelGaussian">Gaussian</span>
+                    <input type="checkbox" id="driftMode" role="switch" aria-labelledby="driftModeLabel driftModeLabelGaussian driftModeLabelUniform">
+                    <span class="toggle-label" id="driftModeLabelUniform">Uniform</span>
+                </div>
             </div>
 
             <div class="control-group">

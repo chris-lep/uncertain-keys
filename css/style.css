@@ -125,6 +125,63 @@ select {
     cursor: pointer;
 }
 
+.toggle-switch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.toggle-switch input[type="checkbox"] {
+    appearance: none;
+    width: 46px;
+    height: 22px;
+    background: #2a2a2a;
+    border: 1px solid #555;
+    border-radius: 999px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.toggle-switch input[type="checkbox"]::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #ff9d00;
+    transition: transform 0.15s ease;
+}
+
+.toggle-switch input[type="checkbox"]:checked {
+    background: #1f1f1f;
+    border-color: #ff9d00;
+}
+
+.toggle-switch input[type="checkbox"]:checked::after {
+    transform: translateX(22px);
+}
+
+.toggle-switch input[type="checkbox"]:focus-visible {
+    outline: 2px solid #ff9d00;
+    outline-offset: 2px;
+}
+
+.toggle-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #777;
+    cursor: pointer;
+    user-select: none;
+}
+
+.toggle-label-active {
+    color: #ffb347;
+}
+
 .octave-btn {
     background: #444;
     color: white;

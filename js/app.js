@@ -176,13 +176,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let octaveShift = 0;
 
     function getSettings() {
+        const driftModeToggle = document.getElementById('driftMode');
         return {
             variance: document.getElementById('variance').value,
             waveType: document.getElementById('waveform').value,
             cutoff: document.getElementById('cutoff').value,
             octaveShift: octaveShift,
             driftDirection: document.getElementById('driftDirection').value,
-            driftMode: (document.getElementById('driftMode') || {}).value || 'gaussian',
+            driftMode: (driftModeToggle && driftModeToggle.checked) ? 'uniform' : 'gaussian',
             driftMean: document.getElementById('driftMean').value,
             driftSpread: document.getElementById('driftSpread').value
         };
@@ -350,23 +351,44 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('driftSpreadVal').innerText = e.target.value;
     });
 
-    const driftModeSelect = document.getElementById('driftMode');
+    const driftModeToggle = document.getElementById('driftMode');
     const driftMeanLabel = document.getElementById('driftMeanLabel');
     const driftSpreadLabel = document.getElementById('driftSpreadLabel');
+    const driftModeLabelGaussian = document.getElementById('driftModeLabelGaussian');
+    const driftModeLabelUniform = document.getElementById('driftModeLabelUniform');
 
     function updateDriftLabels() {
-        if (!driftModeSelect) return;
-        const isUniform = driftModeSelect.value === 'uniform';
+        if (!driftModeToggle) return;
+        const isUniform = driftModeToggle.checked;
         if (driftMeanLabel) {
             driftMeanLabel.innerText = isUniform ? 'Minimum Drift (cts/s)' : 'Mean Drift Speed (cts/s)';
         }
         if (driftSpreadLabel) {
             driftSpreadLabel.innerText = isUniform ? 'Maximum Drift (cts/s)' : 'Drift Spread (cts/s)';
         }
+        if (driftModeLabelGaussian) {
+            driftModeLabelGaussian.classList.toggle('toggle-label-active', !isUniform);
+        }
+        if (driftModeLabelUniform) {
+            driftModeLabelUniform.classList.toggle('toggle-label-active', isUniform);
+        }
+        driftModeToggle.setAttribute('aria-checked', isUniform ? 'true' : 'false');
     }
 
-    if (driftModeSelect) {
-        driftModeSelect.addEventListener('change', updateDriftLabels);
+    if (driftModeToggle) {
+        driftModeToggle.addEventListener('change', updateDriftLabels);
+        if (driftModeLabelGaussian) {
+            driftModeLabelGaussian.addEventListener('click', () => {
+                driftModeToggle.checked = false;
+                updateDriftLabels();
+            });
+        }
+        if (driftModeLabelUniform) {
+            driftModeLabelUniform.addEventListener('click', () => {
+                driftModeToggle.checked = true;
+                updateDriftLabels();
+            });
+        }
         updateDriftLabels();
     }
 
