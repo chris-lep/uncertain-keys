@@ -65,13 +65,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
             <div class="control-group">
                 <label>Filter Cutoff (Hz)</label>
-                <input type="range" id="cutoff" min="100" max="20000" value="20000" step="10">
+                <div class="range-control">
+                    <button class="param-stepper" type="button" data-target="cutoff" data-direction="-1" aria-label="Decrease filter cutoff">−</button>
+                    <input type="range" id="cutoff" min="100" max="20000" value="20000" step="10">
+                    <button class="param-stepper" type="button" data-target="cutoff" data-direction="1" aria-label="Increase filter cutoff">+</button>
+                </div>
                 <span id="cutoffVal" class="value-label">20000</span>
             </div>
 
             <div class="control-group">
                 <label>Pitch Instability (Cents)</label>
-                <input type="range" id="variance" min="0" max="100" value="0" step="0.1">
+                <div class="range-control">
+                    <button class="param-stepper" type="button" data-target="variance" data-direction="-1" aria-label="Decrease pitch instability">−</button>
+                    <input type="range" id="variance" min="0" max="100" value="0" step="0.1">
+                    <button class="param-stepper" type="button" data-target="variance" data-direction="1" aria-label="Increase pitch instability">+</button>
+                </div>
                 <span id="varianceVal" class="value-label">0</span>
             </div>
 
@@ -97,19 +105,31 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
             <div class="control-group">
                 <label>Drift Direction (% Up)</label>
-                <input type="range" id="driftDirection" min="0" max="100" value="50" step="1">
+                <div class="range-control">
+                    <button class="param-stepper" type="button" data-target="driftDirection" data-direction="-1" aria-label="Decrease drift direction">−</button>
+                    <input type="range" id="driftDirection" min="0" max="100" value="50" step="1">
+                    <button class="param-stepper" type="button" data-target="driftDirection" data-direction="1" aria-label="Increase drift direction">+</button>
+                </div>
                 <span id="driftDirectionVal" class="value-label">50%</span>
             </div>
             
             <div class="control-group">
                 <label id="driftMeanLabel">Mean Drift Speed (cts/s)</label>
-                <input type="range" id="driftMean" min="0" max="200" value="0" step="0.1">
+                <div class="range-control">
+                    <button class="param-stepper" type="button" data-target="driftMean" data-direction="-1" aria-label="Decrease drift mean speed">−</button>
+                    <input type="range" id="driftMean" min="0" max="200" value="0" step="0.1">
+                    <button class="param-stepper" type="button" data-target="driftMean" data-direction="1" aria-label="Increase drift mean speed">+</button>
+                </div>
                 <span id="driftMeanVal" class="value-label">0</span>
             </div>
 
             <div class="control-group">
                 <label id="driftSpreadLabel">Drift Spread (cts/s)</label>
-                <input type="range" id="driftSpread" min="0" max="100" value="0" step="0.1">
+                <div class="range-control">
+                    <button class="param-stepper" type="button" data-target="driftSpread" data-direction="-1" aria-label="Decrease drift spread">−</button>
+                    <input type="range" id="driftSpread" min="0" max="100" value="0" step="0.1">
+                    <button class="param-stepper" type="button" data-target="driftSpread" data-direction="1" aria-label="Increase drift spread">+</button>
+                </div>
                 <span id="driftSpreadVal" class="value-label">0</span>
             </div>
         </div>

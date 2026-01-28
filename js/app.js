@@ -530,6 +530,38 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('driftSpreadVal').innerText = e.target.value;
     });
 
+    function getStepPrecision(stepValue) {
+        const stepString = String(stepValue);
+        if (!stepString.includes('.')) return 0;
+        return stepString.split('.')[1].length;
+    }
+
+    function nudgeRangeInput(inputEl, direction, event) {
+        if (!inputEl) return;
+        const step = parseFloat(inputEl.step || '1');
+        const min = parseFloat(inputEl.min || '0');
+        const max = parseFloat(inputEl.max || '100');
+        const current = parseFloat(inputEl.value || '0');
+        let multiplier = 1;
+        if (event && event.shiftKey) multiplier = 10;
+        if (event && event.altKey) multiplier = 0.1;
+        const next = current + (direction * step * multiplier);
+        const precision = getStepPrecision(step * multiplier);
+        const clamped = Math.min(max, Math.max(min, next));
+        inputEl.value = precision > 0 ? clamped.toFixed(precision) : String(Math.round(clamped));
+        inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    document.querySelectorAll('.param-stepper').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            const targetId = btn.dataset.target;
+            const direction = parseFloat(btn.dataset.direction || '0');
+            if (!targetId || !direction) return;
+            const inputEl = document.getElementById(targetId);
+            nudgeRangeInput(inputEl, direction, e);
+        });
+    });
+
     const driftModeToggle = document.getElementById('driftMode');
     const driftMeanLabel = document.getElementById('driftMeanLabel');
     const driftSpreadLabel = document.getElementById('driftSpreadLabel');

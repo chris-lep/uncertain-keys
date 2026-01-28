@@ -167,6 +167,45 @@ input[type=range] {
     cursor: pointer;
 }
 
+.range-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.param-stepper {
+    background: #2a2a2a;
+    color: #f3c06a;
+    border: 1px solid #444;
+    border-radius: 4px;
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.1s, border-color 0.1s, color 0.1s;
+}
+
+.param-stepper:hover {
+    background: #333;
+    border-color: #666;
+    color: #ffd08a;
+}
+
+.param-stepper:active {
+    background: #ff9d00;
+    border-color: #ff9d00;
+    color: #1a1a1a;
+}
+
+.param-stepper:focus-visible {
+    outline: 2px solid #ff9d00;
+    outline-offset: 2px;
+}
+
 select {
     padding: 5px;
     background: #444;
