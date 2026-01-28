@@ -523,11 +523,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const driftMeanSlider = document.getElementById('driftMean');
     driftMeanSlider.addEventListener('input', (e) => {
         document.getElementById('driftMeanVal').innerText = e.target.value;
+        if (driftModeToggle && driftModeToggle.checked) {
+            enforceUniformMinMax('mean');
+        }
     });
 
     const driftSpreadSlider = document.getElementById('driftSpread');
     driftSpreadSlider.addEventListener('input', (e) => {
         document.getElementById('driftSpreadVal').innerText = e.target.value;
+        if (driftModeToggle && driftModeToggle.checked) {
+            enforceUniformMinMax('spread');
+        }
     });
 
     function getStepPrecision(stepValue) {
@@ -567,6 +573,39 @@ document.addEventListener('DOMContentLoaded', () => {
     const driftSpreadLabel = document.getElementById('driftSpreadLabel');
     const driftModeLabelGaussian = document.getElementById('driftModeLabelGaussian');
     const driftModeLabelUniform = document.getElementById('driftModeLabelUniform');
+    const driftDefaults = { gaussian: { mean: '0', spread: '0' }, uniform: { mean: '0', spread: '0' } };
+
+    function readDriftValues() {
+        return {
+            mean: driftMeanSlider ? driftMeanSlider.value : '0',
+            spread: driftSpreadSlider ? driftSpreadSlider.value : '0'
+        };
+    }
+
+    function setDriftValues(values) {
+        if (driftMeanSlider && typeof values.mean !== 'undefined') {
+            driftMeanSlider.value = values.mean;
+            driftMeanSlider.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        if (driftSpreadSlider && typeof values.spread !== 'undefined') {
+            driftSpreadSlider.value = values.spread;
+            driftSpreadSlider.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    }
+
+    function enforceUniformMinMax(changed) {
+        if (!driftMeanSlider || !driftSpreadSlider) return;
+        const minVal = parseFloat(driftMeanSlider.value || '0');
+        const maxVal = parseFloat(driftSpreadSlider.value || '0');
+        if (minVal <= maxVal) return;
+        if (changed === 'mean') {
+            driftSpreadSlider.value = driftMeanSlider.value;
+            driftSpreadSlider.dispatchEvent(new Event('input', { bubbles: true }));
+        } else {
+            driftMeanSlider.value = driftSpreadSlider.value;
+            driftMeanSlider.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    }
 
     function updateDriftLabels() {
         if (!driftModeToggle) return;
@@ -587,17 +626,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (driftModeToggle) {
-        driftModeToggle.addEventListener('change', updateDriftLabels);
+        driftModeToggle.addEventListener('change', () => {
+            const fromMode = driftModeToggle.checked ? 'gaussian' : 'uniform';
+            const toMode = driftModeToggle.checked ? 'uniform' : 'gaussian';
+            driftDefaults[fromMode] = readDriftValues();
+            setDriftValues(driftDefaults[toMode]);
+            updateDriftLabels();
+            if (driftModeToggle.checked) {
+                enforceUniformMinMax('mean');
+            }
+        });
         if (driftModeLabelGaussian) {
             driftModeLabelGaussian.addEventListener('click', () => {
                 driftModeToggle.checked = false;
-                updateDriftLabels();
+                driftModeToggle.dispatchEvent(new Event('change', { bubbles: true }));
             });
         }
         if (driftModeLabelUniform) {
             driftModeLabelUniform.addEventListener('click', () => {
                 driftModeToggle.checked = true;
-                updateDriftLabels();
+                driftModeToggle.dispatchEvent(new Event('change', { bubbles: true }));
             });
         }
         updateDriftLabels();

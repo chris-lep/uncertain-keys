@@ -36,6 +36,7 @@ frequency, then optionally glides over time at a randomized rate and direction.
   - **Waveform**: Selects the oscillator shape.
   - **Filter Cutoff**: Adjusts the brightness of the sound.
   - **Octave**: Buttons to shift the octave.
+  - **Fine Adjustment Buttons**: Use the +/− buttons next to sliders for precise tweaks.
   - **Drift Direction**: Probability of the pitch gliding Up vs. Down.
   - **Drift Distribution Switch**: Toggle between Gaussian (mean/spread) and
     Uniform (minimum/maximum).
@@ -43,6 +44,7 @@ frequency, then optionally glides over time at a randomized rate and direction.
     and standard deviation (cents/s).
   - **Minimum Drift / Maximum Drift**: Uniform mode controls for minimum and
     maximum drift speed (cents/s).
+  - **Mode Memory**: Gaussian and Uniform modes remember their most recent settings.
   - **Recording**: Use **Start Recording** to capture the master output and
     **Stop Recording** to finish and download a WAV file.
 
