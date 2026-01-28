@@ -60,7 +60,6 @@ class Synth {
         this.audioCtx = null;
         this.activeVoices = {};
         this.masterGain = null;
-        this.recordDest = null;
     }
 
     init() {
@@ -71,8 +70,6 @@ class Synth {
             this.masterGain = this.audioCtx.createGain();
             this.masterGain.gain.value = 1;
             this.masterGain.connect(this.audioCtx.destination);
-            this.recordDest = this.audioCtx.createMediaStreamDestination();
-            this.masterGain.connect(this.recordDest);
         }
         if (this.audioCtx.state === 'suspended') {
             this.audioCtx.resume();
@@ -184,39 +181,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const synth = new Synth();
     let currentLayout = 'US';
     let octaveShift = 0;
-    let mediaRecorder = null;
-    let recordingChunks = [];
+    let recorderNode = null;
+    let recorderSilentGain = null;
+    let recorderInputConnected = false;
+    let isRecording = false;
+    let recordedLength = 0;
+    let recordedBuffers = [];
     let lastRecordingUrl = null;
 
     const recordStartBtn = document.getElementById('recordStart');
     const recordStopBtn = document.getElementById('recordStop');
-    const canRecord = typeof MediaRecorder !== 'undefined';
-
-    if (!canRecord && recordStartBtn) {
-        recordStartBtn.disabled = true;
-        recordStartBtn.title = 'Recording not supported in this browser';
-    }
-    if (!canRecord && recordStopBtn) {
-        recordStopBtn.disabled = true;
-    }
-
-    function pickMimeType() {
-        if (!canRecord) return '';
-        const candidates = [
-            'audio/webm;codecs=opus',
-            'audio/webm',
-            'audio/ogg;codecs=opus',
-            'audio/ogg'
-        ];
-        return candidates.find(type => MediaRecorder.isTypeSupported(type)) || '';
-    }
-
-    function fileExtFromType(type) {
-        if (!type) return 'webm';
-        const base = type.split(';')[0].trim();
-        const parts = base.split('/');
-        return parts[1] || 'webm';
-    }
 
     function timestampedName(ext) {
         const stamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -244,62 +218,140 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     }
 
-    function setRecordingUI(isRecording) {
-        if (recordStartBtn) recordStartBtn.disabled = isRecording || !canRecord;
-        if (recordStopBtn) recordStopBtn.disabled = !isRecording || !canRecord;
+    function setRecordingUI(recording) {
+        if (recordStartBtn) recordStartBtn.disabled = recording;
+        if (recordStopBtn) recordStopBtn.disabled = !recording;
+    }
+
+    function mergeBuffers(buffers, totalLength) {
+        const result = new Float32Array(totalLength);
+        let offset = 0;
+        buffers.forEach(buffer => {
+            result.set(buffer, offset);
+            offset += buffer.length;
+        });
+        return result;
+    }
+
+    function interleave(left, right) {
+        const length = left.length + right.length;
+        const result = new Float32Array(length);
+        let index = 0;
+        for (let i = 0; i < left.length; i++) {
+            result[index++] = left[i];
+            result[index++] = right[i];
+        }
+        return result;
+    }
+
+    function floatTo16BitPCM(view, offset, input) {
+        for (let i = 0; i < input.length; i++, offset += 2) {
+            let s = Math.max(-1, Math.min(1, input[i]));
+            view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+        }
+    }
+
+    function writeString(view, offset, string) {
+        for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+        }
+    }
+
+    function encodeWav(buffers, sampleRate, numChannels) {
+        const bytesPerSample = 2;
+        const blockAlign = numChannels * bytesPerSample;
+        const dataLength = buffers.length * bytesPerSample;
+        const buffer = new ArrayBuffer(44 + dataLength);
+        const view = new DataView(buffer);
+
+        writeString(view, 0, 'RIFF');
+        view.setUint32(4, 36 + dataLength, true);
+        writeString(view, 8, 'WAVE');
+        writeString(view, 12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, numChannels, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * blockAlign, true);
+        view.setUint16(32, blockAlign, true);
+        view.setUint16(34, bytesPerSample * 8, true);
+        writeString(view, 36, 'data');
+        view.setUint32(40, dataLength, true);
+
+        floatTo16BitPCM(view, 44, buffers);
+        return new Blob([view], { type: 'audio/wav' });
     }
 
     function startRecording() {
-        if (!canRecord) return;
-        if (!recordStartBtn || !recordStopBtn) return;
-        if (mediaRecorder && mediaRecorder.state === 'recording') return;
-
+        if (isRecording) return;
         synth.init();
-        if (!synth.recordDest) {
-            console.warn('Recording destination not available.');
-            return;
-        }
+        if (!synth.audioCtx || !synth.masterGain) return;
 
-        const mimeType = pickMimeType();
-        const options = mimeType ? { mimeType } : undefined;
+        const bufferSize = 4096;
+        const channelCount = 2;
+        recorderNode = synth.audioCtx.createScriptProcessor(bufferSize, channelCount, channelCount);
+        recorderSilentGain = synth.audioCtx.createGain();
+        recorderSilentGain.gain.value = 0;
 
-        try {
-            mediaRecorder = new MediaRecorder(synth.recordDest.stream, options);
-        } catch (err) {
-            console.warn('Failed to start recorder:', err);
-            setRecordingUI(false);
-            return;
-        }
+        recordedLength = 0;
+        recordedBuffers = Array.from({ length: channelCount }, () => []);
 
-        recordingChunks = [];
-
-        mediaRecorder.ondataavailable = (event) => {
-            if (event.data && event.data.size > 0) {
-                recordingChunks.push(event.data);
+        recorderNode.onaudioprocess = (event) => {
+            const input = event.inputBuffer;
+            const channels = Math.min(channelCount, input.numberOfChannels);
+            for (let ch = 0; ch < channels; ch++) {
+                recordedBuffers[ch].push(new Float32Array(input.getChannelData(ch)));
+            }
+            recordedLength += input.length;
+            const output = event.outputBuffer;
+            for (let ch = 0; ch < output.numberOfChannels; ch++) {
+                output.getChannelData(ch).fill(0);
             }
         };
 
-        mediaRecorder.onerror = (event) => {
-            console.warn('Recorder error:', event);
-            setRecordingUI(false);
-        };
+        synth.masterGain.connect(recorderNode);
+        recorderInputConnected = true;
+        recorderNode.connect(recorderSilentGain);
+        recorderSilentGain.connect(synth.audioCtx.destination);
 
-        mediaRecorder.onstop = () => {
-            const type = mediaRecorder && mediaRecorder.mimeType ? mediaRecorder.mimeType : mimeType;
-            const ext = fileExtFromType(type);
-            const blob = new Blob(recordingChunks, { type: type || 'audio/webm' });
-            downloadBlob(blob, timestampedName(ext));
-            recordingChunks = [];
-        };
-
-        mediaRecorder.start();
+        isRecording = true;
         setRecordingUI(true);
     }
 
     function stopRecording() {
-        if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
-        mediaRecorder.stop();
+        if (!isRecording) return;
+        isRecording = false;
         setRecordingUI(false);
+
+        if (recorderInputConnected && synth.masterGain && recorderNode) {
+            synth.masterGain.disconnect(recorderNode);
+            recorderInputConnected = false;
+        }
+        if (recorderNode) {
+            recorderNode.disconnect();
+            recorderNode.onaudioprocess = null;
+            recorderNode = null;
+        }
+        if (recorderSilentGain) {
+            recorderSilentGain.disconnect();
+            recorderSilentGain = null;
+        }
+
+        const sampleRate = synth.audioCtx ? synth.audioCtx.sampleRate : 44100;
+        const hasSecondChannel = recordedBuffers.length > 1 && recordedBuffers[1].length > 0;
+        const merged = recordedBuffers.map(buffers => mergeBuffers(buffers, recordedLength));
+        let output;
+        let channelCount = 1;
+        if (hasSecondChannel) {
+            output = interleave(merged[0], merged[1]);
+            channelCount = 2;
+        } else {
+            output = merged[0];
+        }
+        const wavBlob = encodeWav(output, sampleRate, channelCount);
+        downloadBlob(wavBlob, timestampedName('wav'));
+        recordedBuffers = [];
+        recordedLength = 0;
     }
 
     function getSettings() {

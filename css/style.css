@@ -132,6 +132,13 @@ body {
     align-items: flex-start;
 }
 
+.recording-row {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-bottom: 15px;
+}
+
 .control-group {
     display: flex;
     flex-direction: column;
