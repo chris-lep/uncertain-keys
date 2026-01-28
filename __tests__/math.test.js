@@ -23,7 +23,8 @@ const appJsContent = fs.readFileSync(appJsPath, 'utf8');
 describe('Uncertain Keys Logic', () => {
     
     // Mocks for Web Audio API
-    let mockOscillator, mockGain, mockFilter, mockContext;
+    let mockOscillator, mockFilter, mockContext;
+    let gainNodes = [];
 
     beforeAll(() => {
         // Setup robust mocks
@@ -42,7 +43,7 @@ describe('Uncertain Keys Logic', () => {
             stop: jest.fn()
         };
 
-        mockGain = {
+        const createMockGain = () => ({
             gain: {
                 value: 0,
                 setValueAtTime: jest.fn(),
@@ -50,8 +51,9 @@ describe('Uncertain Keys Logic', () => {
                 cancelScheduledValues: jest.fn(),
                 exponentialRampToValueAtTime: jest.fn()
             },
-            connect: jest.fn()
-        };
+            connect: jest.fn(),
+            disconnect: jest.fn()
+        });
 
         mockFilter = {
             type: 'lowpass',
@@ -67,7 +69,11 @@ describe('Uncertain Keys Logic', () => {
             resume: jest.fn(),
             createOscillator: jest.fn(() => mockOscillator),
             createBiquadFilter: jest.fn(() => mockFilter),
-            createGain: jest.fn(() => mockGain),
+            createGain: jest.fn(() => {
+                const node = createMockGain();
+                gainNodes.push(node);
+                return node;
+            }),
             currentTime: 100,
             destination: {}
         };
@@ -90,6 +96,7 @@ describe('Uncertain Keys Logic', () => {
     beforeEach(() => {
         // Clear mock history between tests
         jest.clearAllMocks();
+        gainNodes = [];
     });
 
     describe('Math Helper Functions', () => {
@@ -167,6 +174,13 @@ describe('Uncertain Keys Logic', () => {
             expect(synth.audioCtx).toBe(mockContext);
         });
 
+        test('init creates master gain and connects to destination', () => {
+            synth.init();
+            const masterGain = gainNodes[0];
+            expect(masterGain).toBeDefined();
+            expect(masterGain.connect).toHaveBeenCalledWith(mockContext.destination);
+        });
+
         test('playNote creates audio nodes and connects them', () => {
             synth.init();
             const settings = {
@@ -186,10 +200,14 @@ describe('Uncertain Keys Logic', () => {
             expect(mockContext.createBiquadFilter).toHaveBeenCalled();
             expect(mockContext.createGain).toHaveBeenCalled();
 
-            // Check wiring: Osc -> Filter -> Gain -> Destination
+            const masterGain = gainNodes[0];
+            const voiceGain = gainNodes[1];
+
+            // Check wiring: Osc -> Filter -> Gain -> Master -> Destination
             expect(mockOscillator.connect).toHaveBeenCalledWith(mockFilter);
-            expect(mockFilter.connect).toHaveBeenCalledWith(mockGain);
-            expect(mockGain.connect).toHaveBeenCalledWith(mockContext.destination);
+            expect(mockFilter.connect).toHaveBeenCalledWith(voiceGain);
+            expect(voiceGain.connect).toHaveBeenCalledWith(masterGain);
+            expect(masterGain.connect).toHaveBeenCalledWith(mockContext.destination);
             
             expect(mockOscillator.start).toHaveBeenCalled();
         });
@@ -438,12 +456,13 @@ describe('Uncertain Keys Logic', () => {
             
             // Start note 0
             synth.playNote(440, 0, settings);
+            const voiceGain = gainNodes[1];
             
             // Stop note 0
             synth.stopNote(0);
 
             // Gain release
-            expect(mockGain.gain.exponentialRampToValueAtTime).toHaveBeenCalledWith(0.001, expect.any(Number));
+            expect(voiceGain.gain.exponentialRampToValueAtTime).toHaveBeenCalledWith(0.001, expect.any(Number));
             // Oscillator stop
             expect(mockOscillator.stop).toHaveBeenCalled();
         });
