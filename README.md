@@ -43,6 +43,8 @@ frequency, then optionally glides over time at a randomized rate and direction.
     and standard deviation (cents/s).
   - **Minimum Drift / Maximum Drift**: Uniform mode controls for minimum and
     maximum drift speed (cents/s).
+  - **Recording**: Use **Start Recording** to capture the master output and
+    **Stop Recording** to finish and download a WAV file.
 
 ## Usage
 
@@ -52,6 +54,18 @@ To play the synthesizer locally:
 
 1. Download or clone this repository.
 2. Open **`index.html`** in any modern web browser.
+
+### Recording
+
+1. Click **Start Recording** (the synth will initialize audio if it is not
+   already running).
+2. Perform as usual.
+3. Click **Stop Recording** to download a timestamped **.wav** file.
+
+Notes:
+- Recording captures the master output (including filter, drift, and variance).
+- Each recording downloads automatically; your browser may ask for permission
+  the first time it saves a file.
 
 ### Live Demo
 
