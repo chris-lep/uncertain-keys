@@ -59,11 +59,20 @@ class Synth {
     constructor() {
         this.audioCtx = null;
         this.activeVoices = {};
+        this.masterGain = null;
+        this.recordDest = null;
     }
 
     init() {
         if (!this.audioCtx) {
             this.audioCtx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
+        }
+        if (!this.masterGain) {
+            this.masterGain = this.audioCtx.createGain();
+            this.masterGain.gain.value = 1;
+            this.masterGain.connect(this.audioCtx.destination);
+            this.recordDest = this.audioCtx.createMediaStreamDestination();
+            this.masterGain.connect(this.recordDest);
         }
         if (this.audioCtx.state === 'suspended') {
             this.audioCtx.resume();
@@ -140,7 +149,7 @@ class Synth {
         // Wiring: Osc -> Filter -> Gain -> Output
         osc.connect(filter);
         filter.connect(gainNode);
-        gainNode.connect(this.audioCtx.destination);
+        gainNode.connect(this.masterGain);
         
         osc.start();
 
@@ -175,6 +184,123 @@ document.addEventListener('DOMContentLoaded', () => {
     const synth = new Synth();
     let currentLayout = 'US';
     let octaveShift = 0;
+    let mediaRecorder = null;
+    let recordingChunks = [];
+    let lastRecordingUrl = null;
+
+    const recordStartBtn = document.getElementById('recordStart');
+    const recordStopBtn = document.getElementById('recordStop');
+    const canRecord = typeof MediaRecorder !== 'undefined';
+
+    if (!canRecord && recordStartBtn) {
+        recordStartBtn.disabled = true;
+        recordStartBtn.title = 'Recording not supported in this browser';
+    }
+    if (!canRecord && recordStopBtn) {
+        recordStopBtn.disabled = true;
+    }
+
+    function pickMimeType() {
+        if (!canRecord) return '';
+        const candidates = [
+            'audio/webm;codecs=opus',
+            'audio/webm',
+            'audio/ogg;codecs=opus',
+            'audio/ogg'
+        ];
+        return candidates.find(type => MediaRecorder.isTypeSupported(type)) || '';
+    }
+
+    function fileExtFromType(type) {
+        if (!type) return 'webm';
+        const base = type.split(';')[0].trim();
+        const parts = base.split('/');
+        return parts[1] || 'webm';
+    }
+
+    function timestampedName(ext) {
+        const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+        return `uncertain-keys-recording-${stamp}.${ext}`;
+    }
+
+    function downloadBlob(blob, filename) {
+        if (lastRecordingUrl) {
+            URL.revokeObjectURL(lastRecordingUrl);
+            lastRecordingUrl = null;
+        }
+        const url = URL.createObjectURL(blob);
+        lastRecordingUrl = url;
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => {
+            if (lastRecordingUrl === url) {
+                URL.revokeObjectURL(url);
+                lastRecordingUrl = null;
+            }
+        }, 1000);
+    }
+
+    function setRecordingUI(isRecording) {
+        if (recordStartBtn) recordStartBtn.disabled = isRecording || !canRecord;
+        if (recordStopBtn) recordStopBtn.disabled = !isRecording || !canRecord;
+    }
+
+    function startRecording() {
+        if (!canRecord) return;
+        if (!recordStartBtn || !recordStopBtn) return;
+        if (mediaRecorder && mediaRecorder.state === 'recording') return;
+
+        synth.init();
+        if (!synth.recordDest) {
+            console.warn('Recording destination not available.');
+            return;
+        }
+
+        const mimeType = pickMimeType();
+        const options = mimeType ? { mimeType } : undefined;
+
+        try {
+            mediaRecorder = new MediaRecorder(synth.recordDest.stream, options);
+        } catch (err) {
+            console.warn('Failed to start recorder:', err);
+            setRecordingUI(false);
+            return;
+        }
+
+        recordingChunks = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data && event.data.size > 0) {
+                recordingChunks.push(event.data);
+            }
+        };
+
+        mediaRecorder.onerror = (event) => {
+            console.warn('Recorder error:', event);
+            setRecordingUI(false);
+        };
+
+        mediaRecorder.onstop = () => {
+            const type = mediaRecorder && mediaRecorder.mimeType ? mediaRecorder.mimeType : mimeType;
+            const ext = fileExtFromType(type);
+            const blob = new Blob(recordingChunks, { type: type || 'audio/webm' });
+            downloadBlob(blob, timestampedName(ext));
+            recordingChunks = [];
+        };
+
+        mediaRecorder.start();
+        setRecordingUI(true);
+    }
+
+    function stopRecording() {
+        if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+        mediaRecorder.stop();
+        setRecordingUI(false);
+    }
 
     function getSettings() {
         const driftModeToggle = document.getElementById('driftMode');
@@ -408,6 +534,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
+
+    if (recordStartBtn) {
+        recordStartBtn.addEventListener('click', startRecording);
+    }
+    if (recordStopBtn) {
+        recordStopBtn.addEventListener('click', stopRecording);
+    }
 
     // Layout Switch
     const layoutSelect = document.getElementById('layout');

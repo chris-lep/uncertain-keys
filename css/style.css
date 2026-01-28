@@ -89,6 +89,38 @@ body {
     border-color: #666;
 }
 
+.record-btn {
+    background: #2a2a2a;
+    color: #ddd;
+    border: 1px solid #444;
+    padding: 4px 10px;
+    font-size: 11px;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.record-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.record-btn-start:hover:not(:disabled) {
+    color: #fff;
+    border-color: #666;
+}
+
+.record-btn-stop {
+    border-color: #663333;
+    color: #ffb3b3;
+}
+
+.record-btn-stop:hover:not(:disabled) {
+    border-color: #aa4444;
+    color: #fff;
+}
+
 .controls-row {
     display: flex;
     gap: 30px;
