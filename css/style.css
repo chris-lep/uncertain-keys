@@ -392,6 +392,17 @@ select {
     font-size: 13px;
 }
 
+.about-content a {
+    color: #ffb545;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255, 181, 69, 0.4);
+}
+
+.about-content a:hover {
+    color: #ffd08a;
+    border-bottom-color: rgba(255, 208, 138, 0.8);
+}
+
 .about-quote {
     background: #151515;
     border-left: 3px solid #ff9d00;
