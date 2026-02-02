@@ -13,17 +13,30 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
+html, body {
+    width: 100%;
+}
+
 body {
     font-family: 'Segoe UI', sans-serif;
     background-color: #1a1a1a;
     color: #f0f0f0;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    align-items: stretch;
+    justify-content: flex-start;
     height: 100vh;
     margin: 0;
+    overflow: hidden;
+}
+
+.page-scroll {
+    width: 100%;
     overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding: 20px 0;
+    box-sizing: border-box;
 }
 
 .synth-case {
@@ -35,6 +48,7 @@ body {
     width: 920px;
     max-width: none;
     box-sizing: border-box;
+    margin: 0 auto;
 }
 
 /* Header Config */
