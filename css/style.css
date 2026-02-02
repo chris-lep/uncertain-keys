@@ -23,6 +23,7 @@ body {
     justify-content: center;
     height: 100vh;
     margin: 0;
+    overflow-x: auto;
 }
 
 .synth-case {
@@ -32,7 +33,7 @@ body {
     box-shadow: 0 10px 30px rgba(0,0,0,0.6);
     border-top: 4px solid #444;
     width: 920px;
-    max-width: 95vw;
+    max-width: none;
     box-sizing: border-box;
 }
 
