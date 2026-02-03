@@ -123,8 +123,11 @@ Suggested attribution:
 
 Copyright (c) 2026 Christopher Lepenik.
 
-This project is licensed under the GNU General Public License v3.0 only
-(GPL-3.0-only).
-You may redistribute and/or modify it under the terms of the GPL v3.
-This software is provided without warranty; see `LICENSE` for the full text and
-details.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+`LICENSE` file for more details.
