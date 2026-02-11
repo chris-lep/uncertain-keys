@@ -60,6 +60,8 @@ class Synth {
         this.audioCtx = null;
         this.activeVoices = {};
         this.masterGain = null;
+        this.baseVoiceGain = 0.3;
+        this.voiceGainSmoothing = 0.015;
     }
 
     init() {
@@ -141,7 +143,7 @@ class Synth {
         
         // Envelope: Attack (no click) -> Sustain
         gainNode.gain.setValueAtTime(0, now);
-        gainNode.gain.linearRampToValueAtTime(0.3, now + 0.02); // 20ms attack
+        gainNode.gain.linearRampToValueAtTime(this.baseVoiceGain, now + 0.02); // 20ms attack
         
         // Wiring: Osc -> Filter -> Gain -> Output
         osc.connect(filter);
@@ -151,6 +153,7 @@ class Synth {
         osc.start();
 
         this.activeVoices[keyId] = { osc, gainNode, filter };
+        this.rebalanceVoices();
     }
 
     stopNote(keyId) {
@@ -170,6 +173,23 @@ class Synth {
         osc.stop(now + 0.16);
 
         delete this.activeVoices[keyId];
+        this.rebalanceVoices();
+    }
+
+    rebalanceVoices() {
+        if (!this.audioCtx) return;
+
+        const voiceCount = Object.keys(this.activeVoices).length;
+        if (voiceCount === 0) return;
+
+        // Keep perceived loudness consistent while preventing output clipping on chords.
+        const normalizedVoiceGain = this.baseVoiceGain / Math.sqrt(voiceCount);
+        const now = this.audioCtx.currentTime;
+
+        Object.values(this.activeVoices).forEach(({ gainNode }) => {
+            gainNode.gain.cancelScheduledValues(now);
+            gainNode.gain.linearRampToValueAtTime(normalizedVoiceGain, now + this.voiceGainSmoothing);
+        });
     }
 }
 
