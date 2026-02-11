@@ -1,6 +1,6 @@
 {
   "name": "uncertain-keys",
-  "version": "2.5.1",
+  "version": "2.5.2",
   "description": "A probabilistically tuned virtual synthesizer.",
   "main": "index.js",
   "scripts": {
