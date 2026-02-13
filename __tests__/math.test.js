@@ -260,7 +260,7 @@ describe('Uncertain Keys Logic', () => {
             synth.init();
             const settings = {
                 variance: 0,
-                waveType: 'sine',
+                waveType: 'square',
                 cutoff: 1000,
                 octaveShift: 0,
                 driftDirection: 100, // Force UP
@@ -279,7 +279,7 @@ describe('Uncertain Keys Logic', () => {
             synth.init();
             const settings = {
                 variance: 0,
-                waveType: 'sine',
+                waveType: 'square',
                 cutoff: 1000,
                 octaveShift: 0,
                 driftDirection: 50,
@@ -300,7 +300,7 @@ describe('Uncertain Keys Logic', () => {
 
             const settings = {
                 variance: 0,
-                waveType: 'sine',
+                waveType: 'square',
                 cutoff: 1000,
                 octaveShift: 0,
                 driftDirection: 100, // Force UP
@@ -327,7 +327,7 @@ describe('Uncertain Keys Logic', () => {
 
             const settings = {
                 variance: 0,
-                waveType: 'sine',
+                waveType: 'square',
                 cutoff: 1000,
                 octaveShift: 0,
                 driftDirection: 100, // Force UP
@@ -354,7 +354,7 @@ describe('Uncertain Keys Logic', () => {
 
             const settings = {
                 variance: 0,
-                waveType: 'sine',
+                waveType: 'square',
                 cutoff: 1000,
                 octaveShift: 0,
                 driftDirection: 0, // Force DOWN
@@ -382,7 +382,7 @@ describe('Uncertain Keys Logic', () => {
 
             const settings = {
                 variance: 0,
-                waveType: 'sine',
+                waveType: 'square',
                 cutoff: 1000,
                 octaveShift: 0,
                 driftDirection: 0, // Force DOWN
@@ -407,7 +407,7 @@ describe('Uncertain Keys Logic', () => {
 
             const settings = {
                 variance: 0,
-                waveType: 'sine',
+                waveType: 'square',
                 cutoff: 1000,
                 octaveShift: 0,
                 driftDirection: 100, // Force UP
@@ -435,7 +435,7 @@ describe('Uncertain Keys Logic', () => {
 
             const settings = {
                 variance: 0,
-                waveType: 'sine',
+                waveType: 'square',
                 cutoff: 1000,
                 octaveShift: 0,
                 driftDirection: 100, // Force UP
@@ -457,7 +457,7 @@ describe('Uncertain Keys Logic', () => {
             synth.init();
             const settings = {
                 variance: 0,
-                waveType: 'sine',
+                waveType: 'square',
                 cutoff: 1000,
                 octaveShift: 0,
                 driftDirection: 100, // Force UP
@@ -590,9 +590,8 @@ describe('Uncertain Keys Logic', () => {
             expect(nominalMixLevel).toBeLessThan(1);
         });
 
-        test('firefox+sine safeguard clamps very high start frequency', () => {
+        test('sine safeguard clamps very high start frequency', () => {
             synth.init();
-            synth.isFirefox = true;
             const settings = {
                 variance: 0,
                 waveType: 'sine',
@@ -610,9 +609,8 @@ describe('Uncertain Keys Logic', () => {
             expect(startFreq).toBeLessThanOrEqual(44100 * synth.nyquistHeadroom);
         });
 
-        test('non-firefox keeps original high start frequency behavior', () => {
+        test('sine safeguard also applies to non-firefox user agent context', () => {
             synth.init();
-            synth.isFirefox = false;
             const settings = {
                 variance: 0,
                 waveType: 'sine',
@@ -627,12 +625,11 @@ describe('Uncertain Keys Logic', () => {
             synth.playNote(440, 0, settings);
 
             const [startFreq] = mockOscillator.frequency.setValueAtTime.mock.calls[0];
-            expect(startFreq).toBe(440 * Math.pow(2, 10));
+            expect(startFreq).toBeLessThanOrEqual(44100 * synth.nyquistHeadroom);
         });
 
-        test('firefox safeguard does not apply to non-sine waveforms', () => {
+        test('safeguard does not apply to non-sine waveforms', () => {
             synth.init();
-            synth.isFirefox = true;
             const settings = {
                 variance: 0,
                 waveType: 'square',
@@ -650,9 +647,8 @@ describe('Uncertain Keys Logic', () => {
             expect(startFreq).toBe(440 * Math.pow(2, 10));
         });
 
-        test('firefox+sine upward drift holds at limit when already at safe max', () => {
+        test('sine upward drift holds at limit when already at safe max', () => {
             synth.init();
-            synth.isFirefox = true;
             const settings = {
                 variance: 0,
                 waveType: 'sine',
@@ -674,9 +670,8 @@ describe('Uncertain Keys Logic', () => {
             expect(holdCall[0]).toBeCloseTo(0, 8);
         });
 
-        test('firefox+sine drift remains unchanged while below clamp threshold', () => {
+        test('sine drift remains unchanged while below clamp threshold', () => {
             synth.init();
-            synth.isFirefox = true;
             const settings = {
                 variance: 0,
                 waveType: 'sine',

@@ -67,8 +67,6 @@ class Synth {
         this.releaseFloorGain = 0.0001;
         this.minOscillatorFrequency = 1;
         this.nyquistHeadroom = 0.45;
-        const userAgent = (typeof navigator !== "undefined") ? (navigator.userAgent || "") : "";
-        this.isFirefox = /firefox/i.test(userAgent);
     }
 
     init() {
@@ -208,7 +206,7 @@ class Synth {
     }
 
     shouldApplyFrequencySafeguard(waveType) {
-        return this.isFirefox && waveType === "sine";
+        return waveType === "sine";
     }
 
     holdGainAutomation(gainParam, now) {
@@ -246,14 +244,13 @@ class Synth {
 
         const detuneLimit = driftRate > 0 ? maxDetune : minDetune;
         const timeToLimit = detuneLimit / driftRate;
-        if (timeToLimit >= duration) {
-            detuneParam.linearRampToValueAtTime(targetDetune, now + duration);
-            return;
-        }
-
         if (timeToLimit <= 0) {
             detuneParam.setValueAtTime(detuneLimit, now);
             detuneParam.setValueAtTime(detuneLimit, now + duration);
+            return;
+        }
+        if (timeToLimit >= duration) {
+            detuneParam.linearRampToValueAtTime(targetDetune, now + duration);
             return;
         }
 
