@@ -60,9 +60,15 @@ class Synth {
         this.audioCtx = null;
         this.activeVoices = {};
         this.masterGain = null;
-        this.baseVoiceGain = 0.3;
+        this.masterLimiter = null;
+        this.masterOutputConnected = false;
+        this.baseVoiceGain = 0.18;
         this.noteAttackTime = 0.02;
-        this.voiceGainSmoothing = 0.015;
+        this.releaseFloorGain = 0.0001;
+        this.minOscillatorFrequency = 1;
+        this.nyquistHeadroom = 0.45;
+        const userAgent = (typeof navigator !== "undefined") ? (navigator.userAgent || "") : "";
+        this.isFirefox = /firefox/i.test(userAgent);
     }
 
     init() {
@@ -72,7 +78,21 @@ class Synth {
         if (!this.masterGain) {
             this.masterGain = this.audioCtx.createGain();
             this.masterGain.gain.value = 1;
+        }
+        if (!this.masterLimiter && typeof this.audioCtx.createDynamicsCompressor === "function") {
+            this.masterLimiter = this.audioCtx.createDynamicsCompressor();
+            // Static limiter setup avoids per-note gain jumps while controlling chord peaks.
+            this.masterLimiter.threshold.setValueAtTime(-10, this.audioCtx.currentTime);
+            this.masterLimiter.knee.setValueAtTime(10, this.audioCtx.currentTime);
+            this.masterLimiter.ratio.setValueAtTime(20, this.audioCtx.currentTime);
+            this.masterLimiter.attack.setValueAtTime(0.001, this.audioCtx.currentTime);
+            this.masterLimiter.release.setValueAtTime(0.12, this.audioCtx.currentTime);
+            this.masterGain.connect(this.masterLimiter);
+            this.masterLimiter.connect(this.audioCtx.destination);
+            this.masterOutputConnected = true;
+        } else if (!this.masterOutputConnected) {
             this.masterGain.connect(this.audioCtx.destination);
+            this.masterOutputConnected = true;
         }
         if (this.audioCtx.state === 'suspended') {
             this.audioCtx.resume();
@@ -95,7 +115,9 @@ class Synth {
         osc.type = waveType;
         
         // Pitch Drift Logic
-        osc.frequency.setValueAtTime(finalFreq, now);
+        const useFirefoxSineSafeguard = this.shouldApplyFrequencySafeguard(waveType);
+        const startFreq = useFirefoxSineSafeguard ? this.clampFrequency(finalFreq) : finalFreq;
+        osc.frequency.setValueAtTime(startFreq, now);
 
         const dMean = parseFloat(driftMean);
         const dSpread = parseFloat(driftSpread);
@@ -126,11 +148,8 @@ class Synth {
             
             // Use detune for long-duration drift (24 hours)
             const duration = DRIFT_DURATION_SECONDS; 
-            const targetDetune = driftRate * duration;
-
-            // Use linear ramp on detune (which equals exponential frequency change)
             osc.detune.setValueAtTime(0, now);
-            osc.detune.linearRampToValueAtTime(targetDetune, now + duration);
+            this.scheduleDetuneRamp(osc.detune, now, startFreq, driftRate, duration, useFirefoxSineSafeguard);
         }
 
         // 2. Filter (Tone)
@@ -141,13 +160,10 @@ class Synth {
 
         // 3. Amplifier (Envelope)
         const gainNode = this.audioCtx.createGain();
-        
-        const nextVoiceCount = Object.keys(this.activeVoices).length + 1;
-        const normalizedVoiceGain = this.getNormalizedVoiceGain(nextVoiceCount);
 
         // Envelope: Attack (no click) -> Sustain
         gainNode.gain.setValueAtTime(0, now);
-        gainNode.gain.linearRampToValueAtTime(normalizedVoiceGain, now + this.noteAttackTime);
+        gainNode.gain.linearRampToValueAtTime(this.baseVoiceGain, now + this.noteAttackTime);
         
         // Wiring: Osc -> Filter -> Gain -> Output
         osc.connect(filter);
@@ -157,7 +173,6 @@ class Synth {
         osc.start();
 
         this.activeVoices[keyId] = { osc, gainNode, filter };
-        this.rebalanceVoices(keyId);
     }
 
     stopNote(keyId) {
@@ -170,49 +185,83 @@ class Synth {
         const now = this.audioCtx.currentTime;
 
         // Release envelope: Fade out over 0.15s
-        gainNode.gain.cancelScheduledValues(now);
-        gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        this.holdGainAutomation(gainNode.gain, now);
+        const releaseStart = Math.max(gainNode.gain.value, this.releaseFloorGain);
+        gainNode.gain.setValueAtTime(releaseStart, now);
+        gainNode.gain.exponentialRampToValueAtTime(this.releaseFloorGain, now + 0.15);
         
         osc.stop(now + 0.16);
 
         delete this.activeVoices[keyId];
-        this.rebalanceVoices();
     }
 
-    getNormalizedVoiceGain(voiceCount) {
-        if (voiceCount <= 0) return this.baseVoiceGain;
-        // Keep perceived loudness consistent while preventing output clipping on chords.
-        return this.baseVoiceGain / Math.sqrt(voiceCount);
+    getFrequencyBounds() {
+        const sampleRate = (this.audioCtx && this.audioCtx.sampleRate) ? this.audioCtx.sampleRate : 44100;
+        const maxFreq = Math.max(this.minOscillatorFrequency, sampleRate * this.nyquistHeadroom);
+        return { min: this.minOscillatorFrequency, max: maxFreq };
     }
 
-    rebalanceVoices(excludeKeyId = null) {
-        if (!this.audioCtx) return;
-
-        const activeKeyIds = Object.keys(this.activeVoices);
-        const voiceCount = activeKeyIds.length;
-        if (voiceCount === 0) return;
-
-        const normalizedVoiceGain = this.getNormalizedVoiceGain(voiceCount);
-        const now = this.audioCtx.currentTime;
-
-        activeKeyIds.forEach((keyId) => {
-            if (keyId === excludeKeyId) return;
-
-            const gainParam = this.activeVoices[keyId].gainNode.gain;
-
-            if (typeof gainParam.cancelAndHoldAtTime === "function") {
-                gainParam.cancelAndHoldAtTime(now);
-            } else {
-                // Preserve continuity on browsers without cancelAndHoldAtTime.
-                const currentValue = gainParam.value;
-                gainParam.cancelScheduledValues(now);
-                gainParam.setValueAtTime(currentValue, now);
-            }
-
-            gainParam.linearRampToValueAtTime(normalizedVoiceGain, now + this.voiceGainSmoothing);
-        });
+    clampFrequency(freq) {
+        if (!Number.isFinite(freq)) return this.minOscillatorFrequency;
+        const bounds = this.getFrequencyBounds();
+        return Math.min(bounds.max, Math.max(bounds.min, freq));
     }
+
+    shouldApplyFrequencySafeguard(waveType) {
+        return this.isFirefox && waveType === "sine";
+    }
+
+    holdGainAutomation(gainParam, now) {
+        if (typeof gainParam.cancelAndHoldAtTime === "function") {
+            gainParam.cancelAndHoldAtTime(now);
+            return;
+        }
+        // Fallback for browsers without cancelAndHoldAtTime.
+        const currentValue = gainParam.value;
+        gainParam.cancelScheduledValues(now);
+        gainParam.setValueAtTime(currentValue, now);
+    }
+
+    scheduleDetuneRamp(detuneParam, now, startFreq, driftRate, duration, useSafeguard) {
+        const targetDetune = driftRate * duration;
+        if (!useSafeguard) {
+            detuneParam.linearRampToValueAtTime(targetDetune, now + duration);
+            return;
+        }
+
+        const safeStartFreq = this.clampFrequency(startFreq);
+        const bounds = this.getFrequencyBounds();
+        const minDetune = 1200 * Math.log2(bounds.min / safeStartFreq);
+        const maxDetune = 1200 * Math.log2(bounds.max / safeStartFreq);
+        if (!Number.isFinite(minDetune) || !Number.isFinite(maxDetune) || driftRate === 0) {
+            detuneParam.linearRampToValueAtTime(targetDetune, now + duration);
+            return;
+        }
+
+        const withinBounds = targetDetune >= minDetune && targetDetune <= maxDetune;
+        if (withinBounds) {
+            detuneParam.linearRampToValueAtTime(targetDetune, now + duration);
+            return;
+        }
+
+        const detuneLimit = driftRate > 0 ? maxDetune : minDetune;
+        const timeToLimit = detuneLimit / driftRate;
+        if (timeToLimit >= duration) {
+            detuneParam.linearRampToValueAtTime(targetDetune, now + duration);
+            return;
+        }
+
+        if (timeToLimit <= 0) {
+            detuneParam.setValueAtTime(detuneLimit, now);
+            detuneParam.setValueAtTime(detuneLimit, now + duration);
+            return;
+        }
+
+        // Preserve original drift rate until the safe limit, then hold at that limit.
+        detuneParam.linearRampToValueAtTime(detuneLimit, now + timeToLimit);
+        detuneParam.setValueAtTime(detuneLimit, now + duration);
+    }
+
 }
 
 // --- main ---

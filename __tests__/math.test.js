@@ -23,7 +23,7 @@ const appJsContent = fs.readFileSync(appJsPath, 'utf8');
 describe('Uncertain Keys Logic', () => {
     
     // Mocks for Web Audio API
-    let mockOscillator, mockFilter, mockContext;
+    let mockOscillator, mockFilter, mockContext, mockCompressor;
     let gainNodes = [];
 
     beforeAll(() => {
@@ -49,6 +49,7 @@ describe('Uncertain Keys Logic', () => {
                 setValueAtTime: jest.fn(),
                 linearRampToValueAtTime: jest.fn(),
                 cancelScheduledValues: jest.fn(),
+                cancelAndHoldAtTime: jest.fn(),
                 exponentialRampToValueAtTime: jest.fn()
             },
             connect: jest.fn(),
@@ -64,11 +65,21 @@ describe('Uncertain Keys Logic', () => {
             connect: jest.fn()
         };
 
+        mockCompressor = {
+            threshold: { setValueAtTime: jest.fn() },
+            knee: { setValueAtTime: jest.fn() },
+            ratio: { setValueAtTime: jest.fn() },
+            attack: { setValueAtTime: jest.fn() },
+            release: { setValueAtTime: jest.fn() },
+            connect: jest.fn()
+        };
+
         mockContext = {
             state: 'suspended',
             resume: jest.fn(),
             createOscillator: jest.fn(() => mockOscillator),
             createBiquadFilter: jest.fn(() => mockFilter),
+            createDynamicsCompressor: jest.fn(() => mockCompressor),
             createGain: jest.fn(() => {
                 const node = createMockGain();
                 gainNodes.push(node);
@@ -97,6 +108,7 @@ describe('Uncertain Keys Logic', () => {
         // Clear mock history between tests
         jest.clearAllMocks();
         gainNodes = [];
+        mockContext.currentTime = 100;
     });
 
     describe('Math Helper Functions', () => {
@@ -178,7 +190,19 @@ describe('Uncertain Keys Logic', () => {
             synth.init();
             const masterGain = gainNodes[0];
             expect(masterGain).toBeDefined();
-            expect(masterGain.connect).toHaveBeenCalledWith(mockContext.destination);
+            expect(masterGain.connect).toHaveBeenCalledWith(mockCompressor);
+            expect(mockCompressor.connect).toHaveBeenCalledWith(mockContext.destination);
+        });
+
+        test('init configures master limiter for distortion control', () => {
+            synth.init();
+
+            expect(mockContext.createDynamicsCompressor).toHaveBeenCalled();
+            expect(mockCompressor.threshold.setValueAtTime).toHaveBeenCalledWith(-10, expect.any(Number));
+            expect(mockCompressor.knee.setValueAtTime).toHaveBeenCalledWith(10, expect.any(Number));
+            expect(mockCompressor.ratio.setValueAtTime).toHaveBeenCalledWith(20, expect.any(Number));
+            expect(mockCompressor.attack.setValueAtTime).toHaveBeenCalledWith(0.001, expect.any(Number));
+            expect(mockCompressor.release.setValueAtTime).toHaveBeenCalledWith(0.12, expect.any(Number));
         });
 
         test('playNote creates audio nodes and connects them', () => {
@@ -207,7 +231,7 @@ describe('Uncertain Keys Logic', () => {
             expect(mockOscillator.connect).toHaveBeenCalledWith(mockFilter);
             expect(mockFilter.connect).toHaveBeenCalledWith(voiceGain);
             expect(voiceGain.connect).toHaveBeenCalledWith(masterGain);
-            expect(masterGain.connect).toHaveBeenCalledWith(mockContext.destination);
+            expect(masterGain.connect).toHaveBeenCalledWith(mockCompressor);
             
             expect(mockOscillator.start).toHaveBeenCalled();
         });
@@ -462,9 +486,28 @@ describe('Uncertain Keys Logic', () => {
             synth.stopNote(0);
 
             // Gain release
-            expect(voiceGain.gain.exponentialRampToValueAtTime).toHaveBeenCalledWith(0.001, expect.any(Number));
+            expect(voiceGain.gain.cancelAndHoldAtTime).toHaveBeenCalledWith(expect.any(Number));
+            expect(voiceGain.gain.setValueAtTime).toHaveBeenCalledWith(expect.any(Number), expect.any(Number));
+            expect(voiceGain.gain.exponentialRampToValueAtTime).toHaveBeenCalledWith(0.0001, expect.any(Number));
             // Oscillator stop
             expect(mockOscillator.stop).toHaveBeenCalled();
+        });
+
+        test('stopNote clamps release start above zero for exponential ramp safety', () => {
+            synth.init();
+            const settings = { variance: 0, waveType: 'sine', cutoff: 1000, octaveShift: 0, driftDirection: 50, driftMode: 'gaussian', driftMean: 0, driftSpread: 0 };
+
+            synth.playNote(440, 0, settings);
+            const voiceGain = gainNodes[1];
+            voiceGain.gain.value = 0; // Simulate release during very early attack
+
+            synth.stopNote(0);
+
+            const setCalls = voiceGain.gain.setValueAtTime.mock.calls;
+            const [releaseStartValue] = setCalls[setCalls.length - 1];
+            expect(releaseStartValue).toBeGreaterThan(0);
+            expect(releaseStartValue).toBeCloseTo(0.0001, 8);
+            expect(voiceGain.gain.exponentialRampToValueAtTime).toHaveBeenCalledWith(0.0001, expect.any(Number));
         });
 
         test('activeVoices prevents double playing', () => {
@@ -476,6 +519,180 @@ describe('Uncertain Keys Logic', () => {
 
             // Should only create one oscillator (called once)
             expect(mockContext.createOscillator).toHaveBeenCalledTimes(1);
+        });
+
+        test('adding notes does not rewrite envelopes of already playing voices', () => {
+            synth.init();
+            const settings = { variance: 0, waveType: 'sine', cutoff: 1000, octaveShift: 0, driftDirection: 50, driftMode: 'gaussian', driftMean: 0, driftSpread: 0 };
+
+            synth.playNote(440, 0, settings);
+            const firstVoiceGain = gainNodes[1];
+            firstVoiceGain.gain.cancelAndHoldAtTime.mockClear();
+            firstVoiceGain.gain.cancelScheduledValues.mockClear();
+            firstVoiceGain.gain.setValueAtTime.mockClear();
+            firstVoiceGain.gain.linearRampToValueAtTime.mockClear();
+
+            synth.playNote(493.88, 1, settings);
+            synth.playNote(523.25, 2, settings);
+
+            expect(firstVoiceGain.gain.cancelAndHoldAtTime).not.toHaveBeenCalled();
+            expect(firstVoiceGain.gain.cancelScheduledValues).not.toHaveBeenCalled();
+            expect(firstVoiceGain.gain.setValueAtTime).not.toHaveBeenCalled();
+            expect(firstVoiceGain.gain.linearRampToValueAtTime).not.toHaveBeenCalled();
+        });
+
+        test('all notes keep the same attack target gain in polyphony', () => {
+            synth.init();
+            const settings = { variance: 0, waveType: 'sine', cutoff: 1000, octaveShift: 0, driftDirection: 50, driftMode: 'gaussian', driftMean: 0, driftSpread: 0 };
+
+            synth.playNote(440, 0, settings);
+            synth.playNote(493.88, 1, settings);
+            synth.playNote(523.25, 2, settings);
+
+            const voice1 = gainNodes[1];
+            const voice2 = gainNodes[2];
+            const voice3 = gainNodes[3];
+            expect(voice1.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.18, expect.any(Number));
+            expect(voice2.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.18, expect.any(Number));
+            expect(voice3.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.18, expect.any(Number));
+        });
+
+        test('adding a fourth note does not automate master gain', () => {
+            synth.init();
+            const settings = { variance: 0, waveType: 'sine', cutoff: 1000, octaveShift: 0, driftDirection: 50, driftMode: 'gaussian', driftMean: 0, driftSpread: 0 };
+
+            const masterGain = gainNodes[0];
+            masterGain.gain.cancelAndHoldAtTime.mockClear();
+            masterGain.gain.cancelScheduledValues.mockClear();
+            masterGain.gain.setValueAtTime.mockClear();
+            masterGain.gain.linearRampToValueAtTime.mockClear();
+            synth.playNote(440, 0, settings);
+            synth.playNote(493.88, 1, settings);
+            synth.playNote(523.25, 2, settings);
+            synth.playNote(587.33, 3, settings);
+
+            expect(masterGain.gain.cancelAndHoldAtTime).not.toHaveBeenCalled();
+            expect(masterGain.gain.cancelScheduledValues).not.toHaveBeenCalled();
+            expect(masterGain.gain.setValueAtTime).not.toHaveBeenCalled();
+            expect(masterGain.gain.linearRampToValueAtTime).not.toHaveBeenCalled();
+        });
+
+        test('four-note nominal level stays below unity headroom budget', () => {
+            synth.init();
+            const settings = { variance: 0, waveType: 'sine', cutoff: 1000, octaveShift: 0, driftDirection: 50, driftMode: 'gaussian', driftMean: 0, driftSpread: 0 };
+
+            synth.playNote(440, 0, settings);
+            synth.playNote(493.88, 1, settings);
+            synth.playNote(523.25, 2, settings);
+            synth.playNote(587.33, 3, settings);
+
+            const nominalMixLevel = synth.baseVoiceGain * Object.keys(synth.activeVoices).length;
+            expect(nominalMixLevel).toBeLessThan(1);
+        });
+
+        test('firefox+sine safeguard clamps very high start frequency', () => {
+            synth.init();
+            synth.isFirefox = true;
+            const settings = {
+                variance: 0,
+                waveType: 'sine',
+                cutoff: 1000,
+                octaveShift: 10,
+                driftDirection: 50,
+                driftMode: 'gaussian',
+                driftMean: 0,
+                driftSpread: 0
+            };
+
+            synth.playNote(440, 0, settings);
+
+            const [startFreq] = mockOscillator.frequency.setValueAtTime.mock.calls[0];
+            expect(startFreq).toBeLessThanOrEqual(44100 * synth.nyquistHeadroom);
+        });
+
+        test('non-firefox keeps original high start frequency behavior', () => {
+            synth.init();
+            synth.isFirefox = false;
+            const settings = {
+                variance: 0,
+                waveType: 'sine',
+                cutoff: 1000,
+                octaveShift: 10,
+                driftDirection: 50,
+                driftMode: 'gaussian',
+                driftMean: 0,
+                driftSpread: 0
+            };
+
+            synth.playNote(440, 0, settings);
+
+            const [startFreq] = mockOscillator.frequency.setValueAtTime.mock.calls[0];
+            expect(startFreq).toBe(440 * Math.pow(2, 10));
+        });
+
+        test('firefox safeguard does not apply to non-sine waveforms', () => {
+            synth.init();
+            synth.isFirefox = true;
+            const settings = {
+                variance: 0,
+                waveType: 'square',
+                cutoff: 1000,
+                octaveShift: 10,
+                driftDirection: 50,
+                driftMode: 'gaussian',
+                driftMean: 0,
+                driftSpread: 0
+            };
+
+            synth.playNote(440, 0, settings);
+
+            const [startFreq] = mockOscillator.frequency.setValueAtTime.mock.calls[0];
+            expect(startFreq).toBe(440 * Math.pow(2, 10));
+        });
+
+        test('firefox+sine upward drift holds at limit when already at safe max', () => {
+            synth.init();
+            synth.isFirefox = true;
+            const settings = {
+                variance: 0,
+                waveType: 'sine',
+                cutoff: 1000,
+                octaveShift: 10,
+                driftDirection: 100,
+                driftMode: 'gaussian',
+                driftMean: 10,
+                driftSpread: 0
+            };
+
+            synth.playNote(440, 0, settings);
+
+            expect(mockOscillator.detune.linearRampToValueAtTime).not.toHaveBeenCalled();
+            const calls = mockOscillator.detune.setValueAtTime.mock.calls;
+            const duration = 86400;
+            const holdCall = calls.find(([, time]) => time === mockContext.currentTime + duration);
+            expect(holdCall).toBeDefined();
+            expect(holdCall[0]).toBeCloseTo(0, 8);
+        });
+
+        test('firefox+sine drift remains unchanged while below clamp threshold', () => {
+            synth.init();
+            synth.isFirefox = true;
+            const settings = {
+                variance: 0,
+                waveType: 'sine',
+                cutoff: 1000,
+                octaveShift: 0,
+                driftDirection: 100,
+                driftMode: 'gaussian',
+                driftMean: 0.01,
+                driftSpread: 0
+            };
+
+            synth.playNote(440, 0, settings);
+
+            const duration = 86400;
+            expect(mockOscillator.detune.linearRampToValueAtTime)
+                .toHaveBeenCalledWith(0.01 * duration, expect.any(Number));
         });
     });
 });
