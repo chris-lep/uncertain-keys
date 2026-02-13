@@ -61,6 +61,7 @@ class Synth {
         this.activeVoices = {};
         this.masterGain = null;
         this.baseVoiceGain = 0.3;
+        this.noteAttackTime = 0.02;
         this.voiceGainSmoothing = 0.015;
     }
 
@@ -141,9 +142,12 @@ class Synth {
         // 3. Amplifier (Envelope)
         const gainNode = this.audioCtx.createGain();
         
+        const nextVoiceCount = Object.keys(this.activeVoices).length + 1;
+        const normalizedVoiceGain = this.getNormalizedVoiceGain(nextVoiceCount);
+
         // Envelope: Attack (no click) -> Sustain
         gainNode.gain.setValueAtTime(0, now);
-        gainNode.gain.linearRampToValueAtTime(this.baseVoiceGain, now + 0.02); // 20ms attack
+        gainNode.gain.linearRampToValueAtTime(normalizedVoiceGain, now + this.noteAttackTime);
         
         // Wiring: Osc -> Filter -> Gain -> Output
         osc.connect(filter);
@@ -153,7 +157,7 @@ class Synth {
         osc.start();
 
         this.activeVoices[keyId] = { osc, gainNode, filter };
-        this.rebalanceVoices();
+        this.rebalanceVoices(keyId);
     }
 
     stopNote(keyId) {
@@ -176,19 +180,37 @@ class Synth {
         this.rebalanceVoices();
     }
 
-    rebalanceVoices() {
+    getNormalizedVoiceGain(voiceCount) {
+        if (voiceCount <= 0) return this.baseVoiceGain;
+        // Keep perceived loudness consistent while preventing output clipping on chords.
+        return this.baseVoiceGain / Math.sqrt(voiceCount);
+    }
+
+    rebalanceVoices(excludeKeyId = null) {
         if (!this.audioCtx) return;
 
-        const voiceCount = Object.keys(this.activeVoices).length;
+        const activeKeyIds = Object.keys(this.activeVoices);
+        const voiceCount = activeKeyIds.length;
         if (voiceCount === 0) return;
 
-        // Keep perceived loudness consistent while preventing output clipping on chords.
-        const normalizedVoiceGain = this.baseVoiceGain / Math.sqrt(voiceCount);
+        const normalizedVoiceGain = this.getNormalizedVoiceGain(voiceCount);
         const now = this.audioCtx.currentTime;
 
-        Object.values(this.activeVoices).forEach(({ gainNode }) => {
-            gainNode.gain.cancelScheduledValues(now);
-            gainNode.gain.linearRampToValueAtTime(normalizedVoiceGain, now + this.voiceGainSmoothing);
+        activeKeyIds.forEach((keyId) => {
+            if (keyId === excludeKeyId) return;
+
+            const gainParam = this.activeVoices[keyId].gainNode.gain;
+
+            if (typeof gainParam.cancelAndHoldAtTime === "function") {
+                gainParam.cancelAndHoldAtTime(now);
+            } else {
+                // Preserve continuity on browsers without cancelAndHoldAtTime.
+                const currentValue = gainParam.value;
+                gainParam.cancelScheduledValues(now);
+                gainParam.setValueAtTime(currentValue, now);
+            }
+
+            gainParam.linearRampToValueAtTime(normalizedVoiceGain, now + this.voiceGainSmoothing);
         });
     }
 }
