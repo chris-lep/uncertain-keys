@@ -44,22 +44,30 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             </div>
         </div>
 
-        <div class="recording-row">
-            <button id="recordStart" class="record-btn record-btn-start" type="button">
-                Start Recording
-            </button>
-            <button id="recordStop" class="record-btn record-btn-stop" type="button" disabled>
-                Stop Recording
-            </button>
-        </div>
+        <div class="utility-row">
+            <div class="utility-panel">
+                <label class="utility-label">Recording</label>
+                <div class="utility-controls">
+                    <button id="recordStart" class="record-btn record-btn-start" type="button">
+                        Start Recording
+                    </button>
+                    <button id="recordStop" class="record-btn record-btn-stop" type="button" disabled>
+                        Stop Recording
+                    </button>
+                </div>
+            </div>
 
-        <div class="midi-row">
-            <button id="midiEnable" class="record-btn midi-btn" type="button">Enable MIDI</button>
-            <select id="midiInputSelect" aria-label="MIDI input device" disabled>
-                <option value="">No MIDI inputs</option>
-            </select>
-            <button id="midiRefresh" class="record-btn midi-btn" type="button" disabled>Refresh</button>
-            <span id="midiStatus" class="midi-status">MIDI access not enabled</span>
+            <div class="utility-panel utility-panel-midi">
+                <label class="utility-label">MIDI Input</label>
+                <div class="utility-controls midi-controls">
+                    <button id="midiEnable" class="record-btn midi-btn" type="button">Enable MIDI</button>
+                    <select id="midiInputSelect" aria-label="MIDI input device" disabled>
+                        <option value="">No MIDI inputs</option>
+                    </select>
+                    <button id="midiRefresh" class="record-btn midi-btn" type="button" disabled>Refresh</button>
+                </div>
+                <span id="midiStatus" class="midi-status">MIDI access not enabled</span>
+            </div>
         </div>
         
         <div class="controls-row">

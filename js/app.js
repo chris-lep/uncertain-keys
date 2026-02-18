@@ -634,7 +634,10 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 midiAccess.onstatechange = populateMidiInputOptions;
             }
-            if (midiEnableBtn) midiEnableBtn.disabled = true;
+            if (midiEnableBtn) {
+                midiEnableBtn.disabled = true;
+                midiEnableBtn.textContent = 'MIDI Enabled';
+            }
             if (midiRefreshBtn) midiRefreshBtn.disabled = false;
             populateMidiInputOptions();
         } catch (error) {
