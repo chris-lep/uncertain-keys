@@ -276,9 +276,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let recordedLength = 0;
     let recordedBuffers = [];
     let lastRecordingUrl = null;
+    let midiAccess = null;
+    let selectedMidiInput = null;
+    let selectedMidiInputId = "";
+    const midiActiveNotes = new Map();
 
     const recordStartBtn = document.getElementById('recordStart');
     const recordStopBtn = document.getElementById('recordStop');
+    const midiEnableBtn = document.getElementById('midiEnable');
+    const midiInputSelect = document.getElementById('midiInputSelect');
+    const midiRefreshBtn = document.getElementById('midiRefresh');
+    const midiStatusEl = document.getElementById('midiStatus');
 
     function timestampedName(ext) {
         const stamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -477,6 +485,153 @@ document.addEventListener('DOMContentLoaded', () => {
     function stop(idx) {
         synth.stopNote(idx);
         setKeyActive(idx, false);
+    }
+
+    function updateMidiStatus(message) {
+        if (midiStatusEl) midiStatusEl.innerText = message;
+    }
+
+    function isWebMidiSupported() {
+        return typeof navigator !== 'undefined' && typeof navigator.requestMIDIAccess === 'function';
+    }
+
+    function midiNoteToFrequency(noteNumber) {
+        return 440 * Math.pow(2, (noteNumber - 69) / 12);
+    }
+
+    function buildMidiVoiceId(channel, noteNumber) {
+        return `midi:${channel}:${noteNumber}`;
+    }
+
+    function getMidiInputs() {
+        if (!midiAccess || !midiAccess.inputs) return [];
+        return Array.from(midiAccess.inputs.values());
+    }
+
+    function getMidiInputById(id) {
+        if (!id) return null;
+        const inputs = getMidiInputs();
+        return inputs.find(input => input.id === id) || null;
+    }
+
+    function stopAllMidiNotes() {
+        midiActiveNotes.forEach((voiceId) => {
+            stop(voiceId);
+        });
+        midiActiveNotes.clear();
+    }
+
+    function detachSelectedMidiInputListener() {
+        if (!selectedMidiInput) return;
+        selectedMidiInput.onmidimessage = null;
+        selectedMidiInput = null;
+    }
+
+    function handleMidiMessage(event) {
+        if (!event || !event.data || event.data.length < 2) return;
+        const status = event.data[0];
+        const noteNumber = event.data[1];
+        const velocity = event.data.length > 2 ? event.data[2] : 0;
+        const messageType = status & 0xF0;
+        const channel = status & 0x0F;
+
+        if (messageType !== 0x80 && messageType !== 0x90) return;
+
+        const voiceId = buildMidiVoiceId(channel, noteNumber);
+        const isNoteOff = messageType === 0x80 || velocity === 0;
+
+        if (isNoteOff) {
+            if (!midiActiveNotes.has(voiceId)) return;
+            stop(voiceId);
+            midiActiveNotes.delete(voiceId);
+            return;
+        }
+
+        if (midiActiveNotes.has(voiceId)) return;
+        synth.init();
+        play(midiNoteToFrequency(noteNumber), voiceId);
+        midiActiveNotes.set(voiceId, voiceId);
+    }
+
+    function attachSelectedMidiInputListener() {
+        detachSelectedMidiInputListener();
+        if (!selectedMidiInputId) {
+            updateMidiStatus('No MIDI input selected');
+            return;
+        }
+        selectedMidiInput = getMidiInputById(selectedMidiInputId);
+        if (!selectedMidiInput) {
+            selectedMidiInputId = "";
+            updateMidiStatus('Selected device disconnected');
+            return;
+        }
+        selectedMidiInput.onmidimessage = handleMidiMessage;
+        updateMidiStatus(`Connected: ${selectedMidiInput.name || 'Unknown MIDI device'}`);
+    }
+
+    function populateMidiInputOptions() {
+        if (!midiInputSelect) return;
+        const inputs = getMidiInputs();
+        const hasInputs = inputs.length > 0;
+
+        if (selectedMidiInputId && !inputs.some(input => input.id === selectedMidiInputId)) {
+            selectedMidiInputId = "";
+            stopAllMidiNotes();
+            detachSelectedMidiInputListener();
+        }
+
+        midiInputSelect.innerHTML = '';
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.innerText = hasInputs ? 'Select MIDI input' : 'No MIDI inputs';
+        midiInputSelect.appendChild(placeholder);
+
+        inputs.forEach((input) => {
+            const option = document.createElement('option');
+            option.value = input.id;
+            option.innerText = input.name || 'Unnamed MIDI input';
+            midiInputSelect.appendChild(option);
+        });
+
+        if (!selectedMidiInputId && hasInputs) {
+            selectedMidiInputId = inputs[0].id;
+        }
+
+        midiInputSelect.disabled = !hasInputs;
+        midiInputSelect.value = selectedMidiInputId || '';
+
+        if (!hasInputs) {
+            detachSelectedMidiInputListener();
+            updateMidiStatus('No MIDI inputs found');
+            return;
+        }
+
+        attachSelectedMidiInputListener();
+    }
+
+    async function enableMidi() {
+        if (!isWebMidiSupported()) {
+            updateMidiStatus('MIDI unavailable in this browser');
+            return;
+        }
+        if (midiAccess) {
+            populateMidiInputOptions();
+            return;
+        }
+        try {
+            midiAccess = await navigator.requestMIDIAccess({ sysex: false });
+            synth.init();
+            if (typeof midiAccess.addEventListener === 'function') {
+                midiAccess.addEventListener('statechange', populateMidiInputOptions);
+            } else {
+                midiAccess.onstatechange = populateMidiInputOptions;
+            }
+            if (midiEnableBtn) midiEnableBtn.disabled = true;
+            if (midiRefreshBtn) midiRefreshBtn.disabled = false;
+            populateMidiInputOptions();
+        } catch (error) {
+            updateMidiStatus('MIDI access denied');
+        }
     }
 
     // Build Piano UI
@@ -762,6 +917,20 @@ document.addEventListener('DOMContentLoaded', () => {
         recordStopBtn.addEventListener('click', stopRecording);
     }
 
+    if (midiEnableBtn) {
+        midiEnableBtn.addEventListener('click', enableMidi);
+    }
+    if (midiInputSelect) {
+        midiInputSelect.addEventListener('change', (e) => {
+            stopAllMidiNotes();
+            selectedMidiInputId = e.target.value || '';
+            attachSelectedMidiInputListener();
+        });
+    }
+    if (midiRefreshBtn) {
+        midiRefreshBtn.addEventListener('click', () => populateMidiInputOptions());
+    }
+
     // Layout Switch
     const layoutSelect = document.getElementById('layout');
     if (layoutSelect) {
@@ -794,10 +963,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const overlay = document.getElementById('overlay');
     const startAudio = () => {
         synth.init();
-        overlay.style.display = 'none';
+        if (overlay) overlay.style.display = 'none';
     };
-    overlay.addEventListener('click', startAudio);
-    overlay.addEventListener('pointerdown', startAudio);
+    if (overlay) {
+        overlay.addEventListener('click', startAudio);
+        overlay.addEventListener('pointerdown', startAudio);
+    }
 
     // About Modal
     const aboutBtn = document.getElementById('aboutBtn');
@@ -829,6 +1000,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') closeAbout();
+    });
+
+    if (!isWebMidiSupported()) {
+        if (midiEnableBtn) midiEnableBtn.disabled = true;
+        if (midiInputSelect) midiInputSelect.disabled = true;
+        if (midiRefreshBtn) midiRefreshBtn.disabled = true;
+        updateMidiStatus('MIDI unavailable in this browser');
+    } else {
+        if (midiInputSelect) midiInputSelect.disabled = true;
+        if (midiRefreshBtn) midiRefreshBtn.disabled = true;
+        updateMidiStatus('MIDI access not enabled');
+    }
+
+    window.addEventListener('beforeunload', () => {
+        stopAllMidiNotes();
+        detachSelectedMidiInputListener();
     });
 
 });

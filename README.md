@@ -19,7 +19,7 @@ frequency, then optionally glides over time at a randomized rate and direction.
   - **Uniform**: Drift speed is drawn from a uniform distribution between a
     minimum and maximum.
 - **Play Modes**: Use on-screen keys or a computer keyboard (US and German
-  layouts supported).
+  layouts supported), and MIDI input devices (physical or virtual).
 - **Engine**: Runs entirely in the browser via the Web Audio API.
 
 ## Controls
@@ -32,6 +32,12 @@ frequency, then optionally glides over time at a randomized rate and direction.
   - Shift Up: **`X`**.
 - **Interface**:
   - **Layout**: Switch between US and German keyboard layouts.
+  - **MIDI**:
+    - Click **Enable MIDI** to grant Web MIDI access.
+    - Choose a single active input device from the MIDI dropdown (manual selection).
+    - Both physical MIDI controllers and virtual MIDI buses are supported.
+    - MIDI velocity is currently ignored.
+    - Octave shift applies to MIDI notes and keyboard notes.
   - **Variance**: Controls the random pitch deviation.
   - **Waveform**: Selects the oscillator shape.
   - **Filter Cutoff**: Adjusts the brightness of the sound.
@@ -56,6 +62,9 @@ To play the synthesizer locally:
 
 1. Download or clone this repository.
 2. Open **`index.html`** in any modern web browser.
+
+Note:
+- MIDI requires a browser with **Web MIDI API** support.
 
 ### Recording
 
