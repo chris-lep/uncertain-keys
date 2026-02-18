@@ -503,6 +503,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return `midi:${channel}:${noteNumber}`;
     }
 
+    function getMidiDeviceLabel(input) {
+        if (!input) return 'Unknown MIDI device';
+        const name = input.name || 'Unnamed MIDI input';
+        const manufacturer = input.manufacturer || '';
+        if (!manufacturer) return name;
+        return `${name} (${manufacturer})`;
+    }
+
     function getMidiInputs() {
         if (!midiAccess || !midiAccess.inputs) return [];
         return Array.from(midiAccess.inputs.values());
@@ -566,7 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         selectedMidiInput.onmidimessage = handleMidiMessage;
-        updateMidiStatus(`Connected: ${selectedMidiInput.name || 'Unknown MIDI device'}`);
+        updateMidiStatus(`Connected: ${getMidiDeviceLabel(selectedMidiInput)}`);
     }
 
     function populateMidiInputOptions() {
@@ -583,13 +591,13 @@ document.addEventListener('DOMContentLoaded', () => {
         midiInputSelect.innerHTML = '';
         const placeholder = document.createElement('option');
         placeholder.value = '';
-        placeholder.innerText = hasInputs ? 'Select MIDI input' : 'No MIDI inputs';
+        placeholder.textContent = hasInputs ? 'Select MIDI input' : 'No MIDI inputs';
         midiInputSelect.appendChild(placeholder);
 
         inputs.forEach((input) => {
             const option = document.createElement('option');
             option.value = input.id;
-            option.innerText = input.name || 'Unnamed MIDI input';
+            option.textContent = getMidiDeviceLabel(input);
             midiInputSelect.appendChild(option);
         });
 

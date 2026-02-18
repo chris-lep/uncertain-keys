@@ -146,7 +146,7 @@ describe('MIDI Input Support', () => {
     });
 
     test('enabling MIDI requests access and populates device select', async () => {
-        const input = { id: 'dev-1', name: 'Virtual Bus', onmidimessage: null };
+        const input = { id: 'dev-1', name: 'Virtual Bus', manufacturer: 'LoopMIDI', onmidimessage: null };
         setupMidiAccessMock([input]);
 
         document.getElementById('midiEnable').click();
@@ -155,7 +155,8 @@ describe('MIDI Input Support', () => {
         expect(navigator.requestMIDIAccess).toHaveBeenCalledWith({ sysex: false });
         expect(document.getElementById('midiInputSelect').disabled).toBe(false);
         expect(document.getElementById('midiInputSelect').value).toBe('dev-1');
-        expect(document.getElementById('midiStatus').innerText).toContain('Connected: Virtual Bus');
+        expect(document.getElementById('midiStatus').innerText).toContain('Connected: Virtual Bus (LoopMIDI)');
+        expect(document.getElementById('midiInputSelect').options[1].textContent).toBe('Virtual Bus (LoopMIDI)');
     });
 
     test('manual single-select switches message handler between devices', async () => {
